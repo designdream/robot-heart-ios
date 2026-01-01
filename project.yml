@@ -1,0 +1,75 @@
+name: RobotHeart
+options:
+  bundleIdPrefix: com.robotheart
+  deploymentTarget:
+    iOS: 16.0
+  developmentLanguage: en
+  
+settings:
+  MARKETING_VERSION: 1.0.0
+  CURRENT_PROJECT_VERSION: 1
+
+targets:
+  RobotHeart:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: RobotHeart
+        excludes:
+          - "**/*.md"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.robotheart.app
+        INFOPLIST_FILE: RobotHeart/Info.plist
+        SWIFT_VERSION: 5.9
+        ENABLE_PREVIEWS: YES
+        DEVELOPMENT_ASSET_PATHS: "\"RobotHeart/Preview Content\""
+    dependencies:
+      - package: Meshtastic
+      - package: SwiftProtobuf
+    info:
+      path: RobotHeart/Info.plist
+      properties:
+        CFBundleDisplayName: Robot Heart
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSBluetoothAlwaysUsageDescription: "Robot Heart needs Bluetooth to connect to your Meshtastic device for mesh communication."
+        NSBluetoothPeripheralUsageDescription: "Robot Heart needs Bluetooth to connect to your Meshtastic device for mesh communication."
+        NSLocationWhenInUseUsageDescription: "Robot Heart needs your location to share it with your camp mates on the playa."
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Robot Heart needs your location to share it with your camp mates on the playa."
+        UIBackgroundModes:
+          - bluetooth-central
+          - location
+        UIRequiredDeviceCapabilities:
+          - armv7
+          - bluetooth-le
+
+packages:
+  Meshtastic:
+    url: https://github.com/meshtastic/Meshtastic-Apple
+    from: 2.0.0
+  SwiftProtobuf:
+    url: https://github.com/apple/swift-protobuf
+    from: 1.25.0
+
+schemes:
+  RobotHeart:
+    build:
+      targets:
+        RobotHeart: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
