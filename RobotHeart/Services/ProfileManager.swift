@@ -257,10 +257,23 @@ class ProfileManager: ObservableObject {
     
     private func saveApprovedContacts() {
         userDefaults.set(approvedContacts, forKey: approvedContactsKey)
+        userDefaults.synchronize() // Force immediate write
     }
     
     private func loadApprovedContacts() {
         approvedContacts = userDefaults.stringArray(forKey: approvedContactsKey) ?? []
+    }
+    
+    // MARK: - Manual Connection Management (for QR code scanning)
+    func addConnection(_ memberID: String) {
+        guard !approvedContacts.contains(memberID) else { return }
+        approvedContacts.append(memberID)
+        saveApprovedContacts()
+    }
+    
+    func removeConnection(_ memberID: String) {
+        approvedContacts.removeAll { $0 == memberID }
+        saveApprovedContacts()
     }
 }
 

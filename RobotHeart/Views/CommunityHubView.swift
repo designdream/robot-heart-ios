@@ -26,17 +26,17 @@ struct CommunityHubView: View {
     }
     
     enum CommunityFilter: String, CaseIterable {
+        case connections = "My Connections"
         case all = "All"
         case online = "Online Now"
         case nearby = "Nearby"
-        case connections = "My Connections"
         
         var icon: String {
             switch self {
+            case .connections: return "heart"
             case .all: return "person.3"
             case .online: return "wifi"
             case .nearby: return "location"
-            case .connections: return "heart"
             }
         }
     }

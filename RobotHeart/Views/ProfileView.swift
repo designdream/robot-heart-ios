@@ -1189,9 +1189,8 @@ struct ContactScannerView: View {
     
     private func addContact(_ contact: ContactQRData) {
         // Add to approved contacts directly (mutual scan = auto-approve)
-        if !profileManager.approvedContacts.contains(contact.memberID) {
-            profileManager.approvedContacts.append(contact.memberID)
-        }
+        // Use the manager's method which handles persistence
+        profileManager.addConnection(contact.memberID)
         
         // If they have a photo, initiate BLE transfer
         if contact.hasPhoto {
