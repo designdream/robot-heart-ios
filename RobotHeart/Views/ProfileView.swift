@@ -18,7 +18,11 @@ struct ProfileView: View {
                         // ME = "Who am I in this community?"
                         // Identity + reputation + connections
                         
-                        // SECTION 1: MY QR CODE - Big and prominent for others to scan
+                        // SECTION 1: YOUR BURN - Badge of honor, show it off!
+                        // First thing people see when you show them your profile
+                        YourBurnStoryCard()
+                        
+                        // SECTION 2: MY QR CODE - For connecting
                         MyQRCodeCard(profile: profileManager.myProfile)
                         
                         // Scan button - to scan others
@@ -39,10 +43,6 @@ struct ProfileView: View {
                         
                         // GHOST MODE - Easy access toggle for privacy
                         GhostModeToggle()
-                        
-                        // SECTION 2: YOUR BURN STORY - Identity in the community
-                        // (Moved from Home - this is identity, not action)
-                        YourBurnStoryCard()
                         
                         // NOTE: My Connections moved to Community tab - that's where people belong
                         
