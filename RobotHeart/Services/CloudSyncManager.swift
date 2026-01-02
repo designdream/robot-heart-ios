@@ -56,8 +56,9 @@ import Network
 class CloudSyncManager: ObservableObject {
     static let shared = CloudSyncManager()
     
-    private let container: CKContainer
-    private let privateDatabase: CKDatabase
+    // CloudKit - optional, only initialized when iCloud is available
+    private var container: CKContainer?
+    private var privateDatabase: CKDatabase?
     private let localData: LocalDataManager
     private let networkMonitor: NWPathMonitor
     
@@ -81,13 +82,26 @@ class CloudSyncManager: ObservableObject {
     private let campRecordType = "Camp"
     
     init(localData: LocalDataManager = .shared) {
-        // Use default container to avoid crash when iCloud not configured
-        self.container = CKContainer.default()
-        self.privateDatabase = container.privateCloudDatabase
+        // CloudKit disabled - no iCloud entitlements configured
+        // This is a stub that won't crash but won't sync either
         self.localData = localData
         self.networkMonitor = NWPathMonitor()
         
-        // Don't start monitoring in init - do it lazily to avoid blocking main thread
+        // Don't initialize CKContainer - it crashes without entitlements
+        // These will be nil and all sync operations will be no-ops
+    }
+    
+    // Lazy container initialization - only when actually needed and iCloud is available
+    private func initializeCloudKit() -> Bool {
+        guard container == nil else { return true }
+        
+        // Check if iCloud is available before trying to use it
+        if FileManager.default.ubiquityIdentityToken != nil {
+            container = CKContainer.default()
+            privateDatabase = container?.privateCloudDatabase
+            return true
+        }
+        return false
     }
     
     /// Call this to start cloud sync services (lazy initialization)
@@ -195,9 +209,11 @@ class CloudSyncManager: ObservableObject {
     }
     
     private func uploadMessage(recordID: String, operation: String) async throws {
+        guard let db = privateDatabase else { return }  // CloudKit not available
+        
         guard operation != "delete" else {
             let ckRecordID = CKRecord.ID(recordName: recordID)
-            try await privateDatabase.deleteRecord(withID: ckRecordID)
+            try await db.deleteRecord(withID: ckRecordID)
             return
         }
         
@@ -215,13 +231,15 @@ class CloudSyncManager: ObservableObject {
         record["isDelivered"] = message.isDelivered
         record["isRead"] = message.isRead
         
-        try await privateDatabase.save(record)
+        try await db.save(record)
     }
     
     private func uploadMember(recordID: String, operation: String) async throws {
+        guard let db = privateDatabase else { return }  // CloudKit not available
+        
         guard operation != "delete" else {
             let ckRecordID = CKRecord.ID(recordName: recordID)
-            try await privateDatabase.deleteRecord(withID: ckRecordID)
+            try await db.deleteRecord(withID: ckRecordID)
             return
         }
         
@@ -237,13 +255,15 @@ class CloudSyncManager: ObservableObject {
         record["lastLocationLat"] = member.lastLocationLat
         record["lastLocationLon"] = member.lastLocationLon
         
-        try await privateDatabase.save(record)
+        try await db.save(record)
     }
     
     private func uploadCamp(recordID: String, operation: String) async throws {
+        guard let db = privateDatabase else { return }  // CloudKit not available
+        
         guard operation != "delete" else {
             let ckRecordID = CKRecord.ID(recordName: recordID)
-            try await privateDatabase.deleteRecord(withID: ckRecordID)
+            try await db.deleteRecord(withID: ckRecordID)
             return
         }
         
@@ -255,7 +275,7 @@ class CloudSyncManager: ObservableObject {
         record["memberCount"] = Int64(camp.memberCount)
         record["lastBroadcast"] = camp.lastBroadcast
         
-        try await privateDatabase.save(record)
+        try await db.save(record)
     }
     
     // MARK: - Download
@@ -272,6 +292,8 @@ class CloudSyncManager: ObservableObject {
     }
     
     private func downloadMessages() async throws {
+        guard let db = privateDatabase else { return }  // CloudKit not available
+        
         let predicate: NSPredicate
         if let lastSync = lastSyncDate {
             predicate = NSPredicate(format: "timestamp > %@", lastSync as NSDate)
@@ -284,7 +306,7 @@ class CloudSyncManager: ObservableObject {
         let query = CKQuery(recordType: messageRecordType, predicate: predicate)
         query.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
         
-        let (results, _) = try await privateDatabase.records(matching: query, resultsLimit: batchSize)
+        let (results, _) = try await db.records(matching: query, resultsLimit: batchSize)
         
         for result in results {
             switch result.1 {
@@ -297,6 +319,8 @@ class CloudSyncManager: ObservableObject {
     }
     
     private func downloadMembers() async throws {
+        guard let db = privateDatabase else { return }  // CloudKit not available
+        
         let predicate: NSPredicate
         if let lastSync = lastSyncDate {
             predicate = NSPredicate(format: "lastSeen > %@", lastSync as NSDate)
@@ -306,7 +330,7 @@ class CloudSyncManager: ObservableObject {
         
         let query = CKQuery(recordType: memberRecordType, predicate: predicate)
         
-        let (results, _) = try await privateDatabase.records(matching: query, resultsLimit: batchSize)
+        let (results, _) = try await db.records(matching: query, resultsLimit: batchSize)
         
         for result in results {
             switch result.1 {
@@ -319,6 +343,8 @@ class CloudSyncManager: ObservableObject {
     }
     
     private func downloadCamps() async throws {
+        guard let db = privateDatabase else { return }  // CloudKit not available
+        
         let predicate: NSPredicate
         if let lastSync = lastSyncDate {
             predicate = NSPredicate(format: "lastBroadcast > %@", lastSync as NSDate)
@@ -328,7 +354,7 @@ class CloudSyncManager: ObservableObject {
         
         let query = CKQuery(recordType: campRecordType, predicate: predicate)
         
-        let (results, _) = try await privateDatabase.records(matching: query, resultsLimit: batchSize)
+        let (results, _) = try await db.records(matching: query, resultsLimit: batchSize)
         
         for result in results {
             switch result.1 {
@@ -414,7 +440,7 @@ class CloudSyncManager: ObservableObject {
                     record["locationLon"] = lon
                 }
                 
-                try await privateDatabase.save(record)
+                try await privateDatabase?.save(record)
                 print("Gateway: Relayed message to cloud")
             } catch {
                 print("Gateway: Failed to relay message: \(error)")
@@ -432,7 +458,8 @@ class CloudSyncManager: ObservableObject {
                 let predicate = NSPredicate(format: "isDelivered == NO")
                 let query = CKQuery(recordType: messageRecordType, predicate: predicate)
                 
-                let (results, _) = try await privateDatabase.records(matching: query, resultsLimit: 20)
+                guard let db = privateDatabase else { return }
+                let (results, _) = try await db.records(matching: query, resultsLimit: 20)
                 
                 for result in results {
                     switch result.1 {
@@ -443,7 +470,7 @@ class CloudSyncManager: ObservableObject {
                             
                             // Mark as delivered in cloud
                             record["isDelivered"] = true
-                            try await privateDatabase.save(record)
+                            try await db.save(record)
                         }
                     case .failure:
                         break
