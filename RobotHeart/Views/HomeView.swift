@@ -268,6 +268,7 @@ struct GlobalSearchView: View {
         case events = "Events"
         case tasks = "Tasks"
         case camps = "Camps"
+        case guide = "Guide"
     }
     
     var body: some View {
@@ -497,6 +498,25 @@ struct GlobalSearchView: View {
                 }
             }
             
+            // Survival Guide results
+            if selectedCategory == .all || selectedCategory == .guide {
+                let guideResults = guideSearchResults
+                if !guideResults.isEmpty {
+                    SearchResultSection(title: "Survival Guide", count: guideResults.count) {
+                        ForEach(guideResults, id: \.title) { result in
+                            NavigationLink(destination: KnowledgeBaseView()) {
+                                SearchResultRow(
+                                    icon: "book.fill",
+                                    title: result.title,
+                                    subtitle: result.category,
+                                    color: Theme.Colors.goldenYellow
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
             // No results
             if searchResultsEmpty {
                 VStack(spacing: Theme.Spacing.md) {
@@ -566,6 +586,41 @@ struct GlobalSearchView: View {
         return results
     }
     
+    /// Search Survival Guide content
+    private var guideSearchResults: [(title: String, category: String)] {
+        let guideContent: [(title: String, category: String, keywords: [String])] = [
+            // 10 Principles
+            ("Radical Inclusion", "10 Principles", ["inclusion", "welcome", "anyone", "stranger"]),
+            ("Gifting", "10 Principles", ["gift", "giving", "unconditional", "share"]),
+            ("Decommodification", "10 Principles", ["commerce", "money", "sponsor", "advertising"]),
+            ("Radical Self-reliance", "10 Principles", ["self", "reliance", "resources", "survive"]),
+            ("Radical Self-expression", "10 Principles", ["expression", "art", "creative", "unique"]),
+            ("Communal Effort", "10 Principles", ["community", "cooperation", "together", "collaborate"]),
+            ("Civic Responsibility", "10 Principles", ["civic", "responsibility", "laws", "welfare"]),
+            ("Leaving No Trace", "10 Principles", ["moop", "trace", "clean", "environment"]),
+            ("Participation", "10 Principles", ["participate", "engage", "active", "contribute"]),
+            ("Immediacy", "10 Principles", ["immediate", "present", "now", "experience"]),
+            
+            // Survival Tips
+            ("Hydration", "Survival Tips", ["water", "drink", "hydrate", "dehydration"]),
+            ("Sun Protection", "Survival Tips", ["sun", "sunscreen", "shade", "burn", "hat"]),
+            ("Dust Protection", "Survival Tips", ["dust", "goggles", "mask", "whiteout"]),
+            ("First Aid", "Survival Tips", ["medical", "injury", "ranger", "emergency"]),
+            ("Navigation", "Survival Tips", ["map", "address", "clock", "streets"]),
+            
+            // Camp Info
+            ("Robot Heart", "Camp Info", ["robot", "heart", "bus", "music"]),
+            ("Camp Layout", "Camp Info", ["layout", "map", "tent", "location"]),
+            ("Shifts", "Camp Info", ["shift", "volunteer", "schedule", "duty"]),
+        ]
+        
+        return guideContent.filter { item in
+            item.title.localizedCaseInsensitiveContains(searchText) ||
+            item.category.localizedCaseInsensitiveContains(searchText) ||
+            item.keywords.contains { $0.localizedCaseInsensitiveContains(searchText) }
+        }.map { (title: $0.title, category: $0.category) }
+    }
+    
     private var searchResultsEmpty: Bool {
         let people = meshtasticManager.campMembers.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
         let tasks = taskManager.tasks.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
@@ -573,14 +628,16 @@ struct GlobalSearchView: View {
         let mapItems = mapSearchResults
         let locations = membersWithLocations
         let camps = campSearchResults
+        let guide = guideSearchResults
         
         switch selectedCategory {
-        case .all: return people.isEmpty && tasks.isEmpty && events.isEmpty && mapItems.isEmpty && locations.isEmpty && camps.isEmpty
+        case .all: return people.isEmpty && tasks.isEmpty && events.isEmpty && mapItems.isEmpty && locations.isEmpty && camps.isEmpty && guide.isEmpty
         case .people: return people.isEmpty
         case .map: return mapItems.isEmpty && locations.isEmpty
         case .tasks: return tasks.isEmpty
         case .events: return events.isEmpty
         case .camps: return camps.isEmpty
+        case .guide: return guide.isEmpty
         }
     }
 }
