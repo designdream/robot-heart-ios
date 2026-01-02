@@ -17,30 +17,30 @@ struct ContentView: View {
                 }
                 .tag(0)
             
-            // Shifts - The main work system
-            ShiftBlockHubView()
+            // My Burn - Commitments + Opportunities (identity-focused)
+            ShiftsView()
                 .tabItem {
-                    Label("Shifts", systemImage: "calendar.badge.clock")
+                    Label("My Burn", systemImage: "flame.fill")
                 }
                 .badge(shiftManager.badgeCount > 0 ? shiftManager.badgeCount : 0)
                 .tag(1)
             
-            // Camp - Roster, Map, Camp Map
-            CampHubView()
+            // Places - Maps, Camp Layout, Nearby Camps (location-focused)
+            PlacesView()
                 .tabItem {
-                    Label("Camp", systemImage: "person.3.fill")
+                    Label("Places", systemImage: "map.fill")
                 }
                 .tag(2)
             
-            // Messages
-            MessagesView()
+            // Messages - Unified: Global Channel + Direct Messages
+            MessagesHubView()
                 .tabItem {
-                    Label("Messages", systemImage: "message.fill")
+                    Label("Messages", systemImage: "bubble.left.and.bubble.right.fill")
                 }
                 .badge(announcementManager.unreadCount > 0 ? announcementManager.unreadCount : 0)
                 .tag(3)
             
-            // Profile & Settings
+            // Me - Profile, Settings, Social Capital
             ProfileView()
                 .tabItem {
                     Label("Me", systemImage: "person.circle.fill")
