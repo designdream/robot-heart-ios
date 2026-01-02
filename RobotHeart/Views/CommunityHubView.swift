@@ -1065,6 +1065,7 @@ struct CommunityMemberDetailView: View {
     let member: CampMember
     @EnvironmentObject var profileManager: ProfileManager
     @EnvironmentObject var socialManager: SocialManager
+    @EnvironmentObject var economyManager: EconomyManager
     @State private var showingAddNote = false
     @State private var noteText = ""
     
@@ -1074,6 +1075,23 @@ struct CommunityMemberDetailView: View {
     
     var memberNote: MemberNote? {
         socialManager.memberNotes.first { $0.memberID == member.id }
+    }
+    
+    // Get member's contribution stats
+    var memberStanding: EconomyManager.LeaderboardEntry? {
+        economyManager.leaderboard.first { $0.memberID == member.id }
+    }
+    
+    var trustLevel: (name: String, color: Color, icon: String) {
+        let shifts = memberStanding?.shiftsCompleted ?? 0
+        switch shifts {
+        case 20...: return ("Legendary", Theme.Colors.goldenYellow, "star.fill")
+        case 10..<20: return ("Superstar", Theme.Colors.sunsetOrange, "star.fill")
+        case 5..<10: return ("Reliable", Theme.Colors.connected, "checkmark.seal.fill")
+        case 3..<5: return ("Contributing", Theme.Colors.turquoise, "hand.raised.fill")
+        case 1..<3: return ("Improving", Theme.Colors.robotCream.opacity(0.7), "arrow.up.circle")
+        default: return ("New", Theme.Colors.robotCream.opacity(0.5), "person.badge.plus")
+        }
     }
     
     var body: some View {
@@ -1135,6 +1153,82 @@ struct CommunityMemberDetailView: View {
                     }
                     .padding()
                     .frame(maxWidth: .infinity)
+                    .background(Theme.Colors.backgroundMedium)
+                    .cornerRadius(Theme.CornerRadius.lg)
+                    
+                    // Contribution Stats - Show everyone's points
+                    VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                        HStack {
+                            Image(systemName: "flame.fill")
+                                .foregroundColor(Theme.Colors.sunsetOrange)
+                            Text("Contributions")
+                                .font(Theme.Typography.headline)
+                                .foregroundColor(Theme.Colors.robotCream)
+                        }
+                        
+                        HStack(spacing: Theme.Spacing.lg) {
+                            // Points
+                            VStack(spacing: 4) {
+                                Text("\(memberStanding?.points ?? 0)")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(Theme.Colors.goldenYellow)
+                                Text("Points")
+                                    .font(Theme.Typography.caption)
+                                    .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                            }
+                            .frame(maxWidth: .infinity)
+                            
+                            // Shifts
+                            VStack(spacing: 4) {
+                                Text("\(memberStanding?.shiftsCompleted ?? 0)")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(Theme.Colors.turquoise)
+                                Text("Shifts")
+                                    .font(Theme.Typography.caption)
+                                    .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                            }
+                            .frame(maxWidth: .infinity)
+                            
+                            // Trust Level
+                            VStack(spacing: 4) {
+                                Image(systemName: trustLevel.icon)
+                                    .font(.system(size: 24))
+                                    .foregroundColor(trustLevel.color)
+                                Text(trustLevel.name)
+                                    .font(Theme.Typography.caption)
+                                    .foregroundColor(trustLevel.color)
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .padding(.vertical, Theme.Spacing.sm)
+                        
+                        // Reliability indicator
+                        if let standing = memberStanding {
+                            HStack(spacing: Theme.Spacing.sm) {
+                                // Completion rate bar
+                                GeometryReader { geo in
+                                    ZStack(alignment: .leading) {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(Theme.Colors.backgroundLight)
+                                            .frame(height: 8)
+                                        
+                                        let rate = standing.shiftsCompleted > 0 
+                                            ? Double(standing.shiftsCompleted) / Double(standing.shiftsCompleted + standing.shiftsNoShow) 
+                                            : 0
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(rate > 0.8 ? Theme.Colors.connected : (rate > 0.5 ? Theme.Colors.warning : Theme.Colors.emergency))
+                                            .frame(width: geo.size.width * rate, height: 8)
+                                    }
+                                }
+                                .frame(height: 8)
+                                
+                                Text("\(Int((Double(standing.shiftsCompleted) / max(1, Double(standing.shiftsCompleted + standing.shiftsNoShow))) * 100))% reliable")
+                                    .font(Theme.Typography.caption)
+                                    .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                            }
+                        }
+                    }
+                    .padding()
                     .background(Theme.Colors.backgroundMedium)
                     .cornerRadius(Theme.CornerRadius.lg)
                     
