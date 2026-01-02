@@ -13,6 +13,7 @@ struct ContentView: View {
     // Navigation reset triggers - changing these UUIDs forces views to reset to root
     @State private var homeNavID = UUID()
     @State private var communityNavID = UUID()
+    @State private var placesNavID = UUID()
     @State private var myBurnNavID = UUID()
     @State private var meNavID = UUID()
     
@@ -54,8 +55,7 @@ struct ContentView: View {
                 .badge(homeBadge > 0 ? homeBadge : 0)
                 .tag(0)
             
-            // Community - THE CORE: People, Channels, DMs
-            // Unified communication hub - no separate Messages tab
+            // Community - People, Channels, DMs
             CommunityHubView()
                 .id(communityNavID)
                 .tabItem {
@@ -64,6 +64,14 @@ struct ContentView: View {
                 .badge(communityBadge > 0 ? communityBadge : 0)
                 .tag(1)
             
+            // Places - Maps, Camp Layout, Nearby Camps
+            PlacesView()
+                .id(placesNavID)
+                .tabItem {
+                    Label("Places", systemImage: "map.fill")
+                }
+                .tag(2)
+            
             // My Burn - Your commitments, tasks, contributions
             ShiftsView()
                 .id(myBurnNavID)
@@ -71,7 +79,7 @@ struct ContentView: View {
                     Label("My Burn", systemImage: "flame.fill")
                 }
                 .badge(myBurnBadge > 0 ? myBurnBadge : 0)
-                .tag(2)
+                .tag(3)
             
             // Me - Profile, QR code, Settings (no badge - no action needed)
             ProfileView()
@@ -79,7 +87,7 @@ struct ContentView: View {
                 .tabItem {
                     Label("Me", systemImage: "person.circle.fill")
                 }
-                .tag(3)
+                .tag(4)
         }
         .accentColor(Theme.Colors.sunsetOrange)
         .onAppear {
@@ -113,8 +121,9 @@ struct ContentView: View {
         switch tab {
         case 0: homeNavID = UUID()
         case 1: communityNavID = UUID()
-        case 2: myBurnNavID = UUID()
-        case 3: meNavID = UUID()
+        case 2: placesNavID = UUID()
+        case 3: myBurnNavID = UUID()
+        case 4: meNavID = UUID()
         default: break
         }
     }
