@@ -4,6 +4,7 @@ import MapKit
 struct MapView: View {
     @EnvironmentObject var meshtasticManager: MeshtasticManager
     @EnvironmentObject var locationManager: LocationManager
+    @EnvironmentObject var emergencyManager: EmergencyManager
     @State private var region = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 40.7864, longitude: -119.2065),
         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
@@ -88,21 +89,8 @@ struct MapView: View {
                 )
             }
             
-            // Emergency button
-            Button(action: {
-                meshtasticManager.sendEmergency()
-            }) {
-                HStack {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                    Text("EMERGENCY")
-                        .font(Theme.Typography.headline)
-                }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Theme.Colors.disconnected)
-                .cornerRadius(Theme.CornerRadius.md)
-            }
+            // SOS Button
+            SOSButtonView()
         }
         .padding()
         .background(Theme.Colors.backgroundDark)
@@ -194,4 +182,5 @@ struct ActionButton: View {
     MapView()
         .environmentObject(MeshtasticManager())
         .environmentObject(LocationManager())
+        .environmentObject(EmergencyManager())
 }

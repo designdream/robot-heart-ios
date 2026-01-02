@@ -1,7 +1,7 @@
 import Foundation
 import CoreLocation
 
-struct CampMember: Identifiable, Codable {
+struct CampMember: Identifiable, Codable, Hashable {
     let id: String // Meshtastic node ID
     var name: String
     var role: Role
@@ -10,6 +10,15 @@ struct CampMember: Identifiable, Codable {
     var batteryLevel: Int?
     var status: ConnectionStatus
     var currentShift: Shift?
+    
+    // Hashable conformance based on unique ID
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func == (lhs: CampMember, rhs: CampMember) -> Bool {
+        lhs.id == rhs.id
+    }
     
     enum Role: String, Codable, CaseIterable {
         case lead = "Lead"

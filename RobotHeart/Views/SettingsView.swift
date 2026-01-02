@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var meshtasticManager: MeshtasticManager
     @EnvironmentObject var locationManager: LocationManager
+    @EnvironmentObject var shiftManager: ShiftManager
     @State private var userName = "You"
     @State private var selectedRole: CampMember.Role = .general
     @State private var shareInterval: Double = 15
@@ -84,6 +85,30 @@ struct SettingsView: View {
                     
                     // Location settings
                     Section {
+                        // Ghost Mode toggle
+                        Toggle(isOn: Binding(
+                            get: { locationManager.isLocationPrivate },
+                            set: { newValue in
+                                if newValue {
+                                    locationManager.enableGhostMode()
+                                } else {
+                                    locationManager.disableGhostMode()
+                                }
+                            }
+                        )) {
+                            HStack {
+                                Image(systemName: "eye.slash.fill")
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Ghost Mode")
+                                    Text("Hide your location from others")
+                                        .font(Theme.Typography.caption)
+                                        .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                                }
+                            }
+                            .foregroundColor(Theme.Colors.robotCream)
+                        }
+                        .tint(Theme.Colors.sunsetOrange)
+                        
                         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                             HStack {
                                 Text("Share Interval")
@@ -101,30 +126,68 @@ struct SettingsView: View {
                                     }
                                 }
                         }
+                        .opacity(locationManager.isLocationPrivate ? 0.5 : 1.0)
+                        .disabled(locationManager.isLocationPrivate)
                         
                         Toggle("Only when moved", isOn: .constant(true))
                             .foregroundColor(Theme.Colors.robotCream)
                             .tint(Theme.Colors.sunsetOrange)
+                            .opacity(locationManager.isLocationPrivate ? 0.5 : 1.0)
+                            .disabled(locationManager.isLocationPrivate)
                     } header: {
-                        Text("Location Sharing")
+                        Text("Location & Privacy")
                             .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
                     } footer: {
-                        Text("Location updates are sent only when you've moved more than 50 meters")
+                        Text(locationManager.isLocationPrivate ? 
+                             "Your location is hidden. Battery and status are still shared." :
+                             "Location updates are sent only when you've moved more than 50 meters")
                             .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
                     }
                     
-                    // Shift management
+                    // Admin settings
                     Section {
-                        NavigationLink(destination: ShiftScheduleView()) {
+                        Toggle(isOn: Binding(
+                            get: { shiftManager.isAdmin },
+                            set: { shiftManager.setAdminStatus($0) }
+                        )) {
                             HStack {
-                                Image(systemName: "calendar")
-                                Text("Shift Schedule")
+                                Image(systemName: "shield.fill")
+                                Text("Admin Mode")
                             }
                             .foregroundColor(Theme.Colors.robotCream)
                         }
+                        .tint(Theme.Colors.sunsetOrange)
                     } header: {
-                        Text("Shifts")
+                        Text("Permissions")
                             .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                    } footer: {
+                        Text("Admins can create and assign shifts to camp members")
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    }
+                    
+                    // Notifications
+                    Section {
+                        HStack {
+                            Image(systemName: "bell.fill")
+                            Text("Shift Reminders")
+                                .foregroundColor(Theme.Colors.robotCream)
+                            Spacer()
+                            if shiftManager.notificationsEnabled {
+                                Text("Enabled")
+                                    .foregroundColor(Theme.Colors.connected)
+                            } else {
+                                Button("Enable") {
+                                    shiftManager.requestNotificationPermissions()
+                                }
+                                .foregroundColor(Theme.Colors.sunsetOrange)
+                            }
+                        }
+                    } header: {
+                        Text("Notifications")
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                    } footer: {
+                        Text("Get reminded 15 minutes before your shifts")
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
                     }
                     
                     // About
@@ -165,166 +228,9 @@ struct SettingsView: View {
     }
 }
 
-// MARK: - Shift Schedule View
-struct ShiftScheduleView: View {
-    @State private var shifts: [ShiftEntry] = []
-    @State private var showingAddShift = false
-    
-    struct ShiftEntry: Identifiable {
-        let id = UUID()
-        var location: CampMember.Shift.ShiftLocation
-        var startTime: Date
-        var endTime: Date
-    }
-    
-    var body: some View {
-        ZStack {
-            Theme.Colors.backgroundDark.ignoresSafeArea()
-            
-            VStack {
-                if shifts.isEmpty {
-                    VStack(spacing: Theme.Spacing.lg) {
-                        Image(systemName: "calendar.badge.clock")
-                            .font(.system(size: 60))
-                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
-                        
-                        Text("No shifts scheduled")
-                            .font(Theme.Typography.title2)
-                            .foregroundColor(Theme.Colors.robotCream)
-                        
-                        Text("Add your shifts on the bus or Shady Bot")
-                            .font(Theme.Typography.body)
-                            .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding()
-                } else {
-                    List {
-                        ForEach(shifts) { shift in
-                            ShiftRow(shift: shift)
-                        }
-                        .onDelete(perform: deleteShifts)
-                    }
-                    .scrollContentBackground(.hidden)
-                }
-            }
-        }
-        .navigationTitle("Shift Schedule")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showingAddShift = true }) {
-                    Image(systemName: "plus")
-                        .foregroundColor(Theme.Colors.sunsetOrange)
-                }
-            }
-        }
-        .sheet(isPresented: $showingAddShift) {
-            AddShiftView(onAdd: { shift in
-                shifts.append(shift)
-                showingAddShift = false
-            })
-        }
-    }
-    
-    private func deleteShifts(at offsets: IndexSet) {
-        shifts.remove(atOffsets: offsets)
-    }
-}
-
-// MARK: - Shift Row
-struct ShiftRow: View {
-    let shift: ShiftScheduleView.ShiftEntry
-    
-    var body: some View {
-        HStack {
-            Image(systemName: shift.location == .bus ? "bus.fill" : "sun.max.fill")
-                .foregroundColor(Theme.Colors.turquoise)
-                .font(.title3)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(shift.location.rawValue)
-                    .font(Theme.Typography.headline)
-                    .foregroundColor(Theme.Colors.robotCream)
-                
-                Text("\(timeString(shift.startTime)) - \(timeString(shift.endTime))")
-                    .font(Theme.Typography.caption)
-                    .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
-            }
-            
-            Spacer()
-        }
-        .padding(.vertical, Theme.Spacing.xs)
-        .listRowBackground(Theme.Colors.backgroundMedium)
-    }
-    
-    private func timeString(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
-}
-
-// MARK: - Add Shift View
-struct AddShiftView: View {
-    let onAdd: (ShiftScheduleView.ShiftEntry) -> Void
-    @Environment(\.dismiss) var dismiss
-    
-    @State private var selectedLocation: CampMember.Shift.ShiftLocation = .bus
-    @State private var startTime = Date()
-    @State private var endTime = Date().addingTimeInterval(3600)
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                Theme.Colors.backgroundDark.ignoresSafeArea()
-                
-                Form {
-                    Section {
-                        Picker("Location", selection: $selectedLocation) {
-                            Text("Robot Heart Bus").tag(CampMember.Shift.ShiftLocation.bus)
-                            Text("Shady Bot").tag(CampMember.Shift.ShiftLocation.shadyBot)
-                            Text("Camp").tag(CampMember.Shift.ShiftLocation.camp)
-                        }
-                        .foregroundColor(Theme.Colors.robotCream)
-                        
-                        DatePicker("Start Time", selection: $startTime)
-                            .foregroundColor(Theme.Colors.robotCream)
-                        
-                        DatePicker("End Time", selection: $endTime)
-                            .foregroundColor(Theme.Colors.robotCream)
-                    }
-                }
-                .scrollContentBackground(.hidden)
-            }
-            .navigationTitle("Add Shift")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .foregroundColor(Theme.Colors.robotCream)
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Add") {
-                        let shift = ShiftScheduleView.ShiftEntry(
-                            location: selectedLocation,
-                            startTime: startTime,
-                            endTime: endTime
-                        )
-                        onAdd(shift)
-                    }
-                    .foregroundColor(Theme.Colors.sunsetOrange)
-                }
-            }
-        }
-    }
-}
-
 #Preview {
     SettingsView()
         .environmentObject(MeshtasticManager())
         .environmentObject(LocationManager())
+        .environmentObject(ShiftManager())
 }

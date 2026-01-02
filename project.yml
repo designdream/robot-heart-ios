@@ -25,9 +25,7 @@ targets:
         SWIFT_VERSION: 5.9
         ENABLE_PREVIEWS: YES
         DEVELOPMENT_ASSET_PATHS: "\"RobotHeart/Preview Content\""
-    dependencies:
-      - package: Meshtastic
-      - package: SwiftProtobuf
+    dependencies: []
     info:
       path: RobotHeart/Info.plist
       properties:
@@ -50,13 +48,6 @@ targets:
           - armv7
           - bluetooth-le
 
-packages:
-  Meshtastic:
-    url: https://github.com/meshtastic/Meshtastic-Apple
-    from: 2.0.0
-  SwiftProtobuf:
-    url: https://github.com/apple/swift-protobuf
-    from: 1.25.0
 
 schemes:
   RobotHeart:

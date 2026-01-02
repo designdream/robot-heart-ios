@@ -2,14 +2,27 @@ import SwiftUI
 
 struct RosterView: View {
     @EnvironmentObject var meshtasticManager: MeshtasticManager
+    @EnvironmentObject var checkInManager: CheckInManager
     @State private var selectedRole: CampMember.Role? = nil
     @State private var showingAddMember = false
+    @State private var searchText: String = ""
+    @State private var selectedMember: CampMember?
+    @State private var showingMemberDetail = false
     
     var filteredMembers: [CampMember] {
+        var members = meshtasticManager.campMembers
+        
+        // Filter by role
         if let role = selectedRole {
-            return meshtasticManager.campMembers.filter { $0.role == role }
+            members = members.filter { $0.role == role }
         }
-        return meshtasticManager.campMembers
+        
+        // Filter by search text
+        if !searchText.isEmpty {
+            members = members.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        }
+        
+        return members
     }
     
     var onlineCount: Int {
@@ -25,14 +38,27 @@ struct RosterView: View {
                     // Header with connection status
                     headerView
                     
+                    // Search bar
+                    searchBar
+                    
                     // Role filter
                     roleFilterView
                     
                     // Members list
                     ScrollView {
                         LazyVStack(spacing: Theme.Spacing.sm) {
+                            // Check-in card at top
+                            CheckInCard()
+                            
+                            // Overdue members alert
+                            OverdueMembersView()
+                            
                             ForEach(filteredMembers) { member in
                                 MemberCard(member: member)
+                                    .onTapGesture {
+                                        selectedMember = member
+                                        showingMemberDetail = true
+                                    }
                                     .transition(.scale.combined(with: .opacity))
                             }
                         }
@@ -54,6 +80,30 @@ struct RosterView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingMemberDetail) {
+            if let member = selectedMember {
+                MemberDetailView(member: member)
+            }
+        }
+    }
+    
+    private var searchBar: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+            
+            TextField("Search members...", text: $searchText)
+                .foregroundColor(Theme.Colors.robotCream)
+            
+            if !searchText.isEmpty {
+                Button(action: { searchText = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                }
+            }
+        }
+        .padding(Theme.Spacing.sm)
+        .background(Theme.Colors.backgroundMedium)
     }
     
     private var headerView: some View {
@@ -281,4 +331,5 @@ struct RoleFilterChip: View {
 #Preview {
     RosterView()
         .environmentObject(MeshtasticManager())
+        .environmentObject(CheckInManager())
 }

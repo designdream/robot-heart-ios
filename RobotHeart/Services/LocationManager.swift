@@ -8,6 +8,8 @@ class LocationManager: NSObject, ObservableObject {
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
     @Published var isSharing = false
     @Published var shareInterval: TimeInterval = 900 // 15 minutes default
+    @Published var isLocationPrivate = false // Ghost mode - hide location from others
+    @Published var shareStatusOnly = false // Share battery/status but not location
     
     // MARK: - Private Properties
     private let locationManager = CLLocationManager()
@@ -68,6 +70,16 @@ class LocationManager: NSObject, ObservableObject {
     func shareCurrentLocation() {
         guard let location = location else { return }
         
+        // Don't share location if privacy mode is on
+        if isLocationPrivate {
+            // Share status-only update (no coordinates)
+            NotificationCenter.default.post(
+                name: .statusOnlyUpdate,
+                object: nil
+            )
+            return
+        }
+        
         // Only share if moved significantly or enough time has passed
         if shouldShareLocation(location) {
             let campLocation = CampMember.Location(
@@ -85,6 +97,21 @@ class LocationManager: NSObject, ObservableObject {
             
             lastSharedLocation = location
         }
+    }
+    
+    // MARK: - Privacy Controls
+    func enableGhostMode() {
+        isLocationPrivate = true
+        UserDefaults.standard.set(true, forKey: "locationPrivate")
+    }
+    
+    func disableGhostMode() {
+        isLocationPrivate = false
+        UserDefaults.standard.set(false, forKey: "locationPrivate")
+    }
+    
+    func loadPrivacySettings() {
+        isLocationPrivate = UserDefaults.standard.bool(forKey: "locationPrivate")
     }
     
     // MARK: - Private Methods
@@ -133,4 +160,5 @@ extension LocationManager: CLLocationManagerDelegate {
 // MARK: - Notification Names
 extension Notification.Name {
     static let locationUpdate = Notification.Name("locationUpdate")
+    static let statusOnlyUpdate = Notification.Name("statusOnlyUpdate")
 }
