@@ -1277,8 +1277,9 @@ struct ShiftCommitmentRow: View {
         case shift, task
     }
     
-    // Estimated walk speed on playa (slower due to dust, terrain)
-    private let playaWalkSpeedMPS: Double = 1.0 // ~2.2 mph, conservative for playa
+    // Playa bike speed limit is 5 mph (~2.2 m/s) - most people bike
+    // Walking is ~2 mph (~0.9 m/s) but we assume biking as default
+    private let playaBikeSpeedMPS: Double = 2.2 // 5 mph, playa speed limit
     
     // Calculate time to leave
     var timeToLeave: (minutes: Int, status: LeaveStatus)? {
@@ -1290,7 +1291,7 @@ struct ShiftCommitmentRow: View {
         // Estimate travel time (default 10 min if no GPS)
         let travelTimeSeconds: Double
         if let distance = locationDistance {
-            travelTimeSeconds = distance / playaWalkSpeedMPS
+            travelTimeSeconds = distance / playaBikeSpeedMPS
         } else {
             travelTimeSeconds = 600 // Default 10 min buffer
         }

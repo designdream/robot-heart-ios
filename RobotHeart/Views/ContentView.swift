@@ -10,29 +10,31 @@ struct ContentView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            // Home - Dashboard with key info
+            // Home - Dashboard with key info, announcements, what's happening
             HomeView()
                 .tabItem {
                     Label("Home", systemImage: "heart.fill")
                 }
                 .tag(0)
             
-            // My Burn - Commitments + Opportunities (identity-focused)
+            // Community - THE CORE: People, connections, who's here
+            // Research shows human connection is #1 reason people come to Burning Man
+            CommunityHubView()
+                .tabItem {
+                    Label("Community", systemImage: "person.3.fill")
+                }
+                .badge(profileManager.pendingRequestsCount > 0 ? profileManager.pendingRequestsCount : 0)
+                .tag(1)
+            
+            // My Burn - Your commitments, contributions, opportunities
             ShiftsView()
                 .tabItem {
                     Label("My Burn", systemImage: "flame.fill")
                 }
                 .badge(shiftManager.badgeCount > 0 ? shiftManager.badgeCount : 0)
-                .tag(1)
-            
-            // Places - Maps, Camp Layout, Nearby Camps (location-focused)
-            PlacesView()
-                .tabItem {
-                    Label("Places", systemImage: "map.fill")
-                }
                 .tag(2)
             
-            // Messages - Unified: Global Channel + Direct Messages
+            // Messages - Global Channel + Direct Messages + Announcements
             MessagesHubView()
                 .tabItem {
                     Label("Messages", systemImage: "bubble.left.and.bubble.right.fill")
@@ -40,12 +42,11 @@ struct ContentView: View {
                 .badge(announcementManager.unreadCount > 0 ? announcementManager.unreadCount : 0)
                 .tag(3)
             
-            // Me - Profile, Settings, Social Capital
+            // Me - Profile, QR code, Settings
             ProfileView()
                 .tabItem {
                     Label("Me", systemImage: "person.circle.fill")
                 }
-                .badge(profileManager.pendingRequestsCount > 0 ? profileManager.pendingRequestsCount : 0)
                 .tag(4)
         }
         .accentColor(Theme.Colors.sunsetOrange)
