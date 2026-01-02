@@ -423,13 +423,17 @@ struct GlobalSearchView: View {
                 }
             }
             
-            // Map items results - link to Places/Map
+            // Map items results - link to highlighted map view
             if selectedCategory == .all || selectedCategory == .map {
                 let mapItemResults = mapSearchResults
                 if !mapItemResults.isEmpty {
                     SearchResultSection(title: "Map Items", count: mapItemResults.count) {
                         ForEach(mapItemResults) { item in
-                            NavigationLink(destination: CampBrowserView()) {
+                            NavigationLink(destination: PlaceSearchMapView(
+                                destinationName: item.name,
+                                destinationItem: item,
+                                destinationCoordinate: nil
+                            )) {
                                 MapSearchResultRow(item: item)
                             }
                         }
