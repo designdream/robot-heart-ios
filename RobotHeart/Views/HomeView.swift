@@ -89,6 +89,10 @@ struct HomeView: View {
                     NavigationLink(tag: .findPerson, selection: $quickActionNavigation) {
                         CommunityHubView()
                     } label: { EmptyView() }
+                    
+                    NavigationLink(tag: .addTask, selection: $quickActionNavigation) {
+                        AddTaskView(preselectedArea: nil)
+                    } label: { EmptyView() }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)

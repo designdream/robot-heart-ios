@@ -71,7 +71,7 @@ struct PullDownActionsOverlay: View {
 
 // MARK: - Quick Action Destinations
 enum QuickActionDestination: Identifiable {
-    case messages, tasks, commitments, qrCode, map, guide, events, checkIn, findPerson
+    case messages, tasks, commitments, qrCode, map, guide, events, checkIn, findPerson, addTask
     var id: Self { self }
 }
 
@@ -85,7 +85,7 @@ struct QuickActionsContent: View {
     
     var body: some View {
         VStack(spacing: Theme.Spacing.md) {
-            // Simplified: Only essential actions not easily accessible via tabs
+            // Row 1: Safety
             HStack(spacing: Theme.Spacing.md) {
                 // SOS - Emergency (critical)
                 QuickActionItem(
@@ -106,9 +106,7 @@ struct QuickActionsContent: View {
                 ) {
                     onNavigate(.checkIn)
                 }
-            }
-            
-            HStack(spacing: Theme.Spacing.md) {
+                
                 // Ghost Mode - Privacy toggle
                 QuickActionItem(
                     icon: locationManager.isLocationPrivate ? "eye.slash.fill" : "eye.fill",
@@ -121,6 +119,18 @@ struct QuickActionsContent: View {
                         locationManager.enableGhostMode()
                     }
                     onDismiss()
+                }
+            }
+            
+            // Row 2: Actions
+            HStack(spacing: Theme.Spacing.md) {
+                // Add Task - quick create
+                QuickActionItem(
+                    icon: "plus.circle.fill",
+                    label: "Add Task",
+                    color: Theme.Colors.turquoise
+                ) {
+                    onNavigate(.addTask)
                 }
                 
                 // Scan QR - Connect with someone

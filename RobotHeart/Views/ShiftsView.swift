@@ -64,34 +64,12 @@ struct ShiftsView: View {
                         .foregroundColor(Theme.Colors.robotCream)
                 }
                 
-                ToolbarItem(placement: .navigationBarLeading) {
-                    // Tasks Hub - full task management
-                    NavigationLink(destination: TasksHubView()) {
-                        Image(systemName: "checklist")
-                            .foregroundColor(Theme.Colors.sunsetOrange)
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: Theme.Spacing.sm) {
-                        // Add Task - quick create
-                        Button(action: { showingAddTask = true }) {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundColor(Theme.Colors.turquoise)
-                        }
-                        
-                        // Camp Map
-                        Button(action: { showingCampMap = true }) {
-                            Image(systemName: "map.fill")
-                                .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
-                        }
-                        
-                        // Admin
-                        if shiftManager.isAdmin {
-                            Button(action: { showingAdminView = true }) {
-                                Image(systemName: "calendar.badge.plus")
-                                    .foregroundColor(Theme.Colors.goldenYellow)
-                            }
+                // Admin only - for creating/managing shifts
+                if shiftManager.isAdmin {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: { showingAdminView = true }) {
+                            Image(systemName: "gearshape.fill")
+                                .foregroundColor(Theme.Colors.goldenYellow)
                         }
                     }
                 }
