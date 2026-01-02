@@ -462,7 +462,7 @@ struct BlockDetailHeader: View {
             HStack(spacing: Theme.Spacing.xl) {
                 StatItem(value: "\(block.openSlots)", label: "Open", color: Theme.Colors.connected)
                 StatItem(value: "\(block.filledSlots)", label: "Filled", color: Theme.Colors.turquoise)
-                StatItem(value: "+\(block.totalPoints)", label: "Points", color: Theme.Colors.sunsetOrange)
+                StatItem(value: "+\(block.totalPoints)", label: "Burn", color: Theme.Colors.sunsetOrange)
             }
         }
         .padding()

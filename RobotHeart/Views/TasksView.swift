@@ -89,7 +89,7 @@ struct TaskStatsHeader: View {
             
             TaskStatPill(
                 value: "\(taskManager.myTotalPoints)",
-                label: "Points",
+                label: "Burn",
                 color: Theme.Colors.goldenYellow
             )
         }
@@ -601,7 +601,7 @@ struct TaskDetailView: View {
                         VStack(spacing: Theme.Spacing.sm) {
                             DetailRow(label: "Status", value: task.status.rawValue, icon: task.status.icon, color: task.status.color)
                             
-                            DetailRow(label: "Points", value: "+\(task.pointsValue)", icon: "star.fill", color: Theme.Colors.goldenYellow)
+                            DetailRow(label: "Burn", value: "+\(task.pointsValue)", icon: "star.fill", color: Theme.Colors.goldenYellow)
                             
                             if let assignee = task.assignedToName {
                                 DetailRow(label: "Assigned To", value: assignee, icon: "person.fill", color: Theme.Colors.turquoise)

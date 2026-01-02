@@ -260,7 +260,7 @@ struct AnonymousShiftCard: View {
                             .foregroundColor(Theme.Colors.sunsetOrange)
                     }
                     
-                    Text("points")
+                    Text("burn")
                         .font(Theme.Typography.caption)
                         .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
                 }

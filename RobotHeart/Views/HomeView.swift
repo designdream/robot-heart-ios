@@ -21,16 +21,17 @@ struct HomeView: View {
                 
                 ScrollView {
                     VStack(spacing: Theme.Spacing.lg) {
-                        // PRIORITY 1: Social Capital - Trust-based, not competitive
-                        NavigationLink(destination: SocialCapitalDetailView()) {
-                            SocialCapitalCard()
-                        }
-                        .buttonStyle(PlainButtonStyle())
+                        // HOME = "What's happening NOW that needs my attention?"
+                        // Glanceable dashboard - look once, put phone away
                         
-                        // PRIORITY 2: Urgent announcements
+                        // PRIORITY 1: Urgent announcements (action needed)
                         if !announcementManager.announcements.isEmpty {
                             RecentAnnouncementsCard()
                         }
+                        
+                        // PRIORITY 2: Next commitment with time-to-leave
+                        // (Where do I need to be?)
+                        NextCommitmentCard()
                         
                         // PRIORITY 3: Safety check-in reminder (only if user opted in)
                         if checkInManager.checkInEnabled {
@@ -44,14 +45,13 @@ struct HomeView: View {
                             }
                         }
                         
-                        // PRIORITY 5: My upcoming commitments (shifts + tasks unified)
-                        MyUpcomingShiftsCard()
+                        // PRIORITY 5: Connection status (are you connected to mesh?)
+                        ConnectionCard()
                         
-                        // PRIORITY 6: Upcoming Events
+                        // PRIORITY 6: Upcoming Events (social discovery)
                         UpcomingEventsCard()
                         
-                        // PRIORITY 7: Connection status
-                        ConnectionCard()
+                        // NOTE: Social Capital moved to "Me" tab - it's identity, not action
                     }
                     .padding()
                 }
@@ -902,6 +902,149 @@ struct ActiveDraftCard: View {
             RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
                 .stroke(Theme.Colors.connected, lineWidth: 2)
         )
+    }
+}
+
+// MARK: - Next Commitment Card (Time-to-leave focused)
+struct NextCommitmentCard: View {
+    @EnvironmentObject var shiftManager: ShiftManager
+    @EnvironmentObject var taskManager: TaskManager
+    
+    // Playa bike speed limit is 5 mph (~2.2 m/s)
+    private let playaBikeSpeedMPS: Double = 2.2
+    
+    var nextShift: Shift? {
+        shiftManager.myShifts
+            .filter { $0.startTime > Date() }
+            .sorted { $0.startTime < $1.startTime }
+            .first
+    }
+    
+    var timeUntilShift: TimeInterval? {
+        guard let shift = nextShift else { return nil }
+        return shift.startTime.timeIntervalSince(Date())
+    }
+    
+    var leaveStatus: (message: String, color: Color, icon: String)? {
+        guard let interval = timeUntilShift else { return nil }
+        let minutes = Int(interval / 60)
+        
+        // Assume 10 min travel + 5 min buffer
+        let leaveInMinutes = minutes - 15
+        
+        if leaveInMinutes < 0 {
+            return ("You should have left \(abs(leaveInMinutes)) min ago!", Theme.Colors.emergency, "exclamationmark.triangle.fill")
+        } else if leaveInMinutes < 5 {
+            return ("Leave now to be on time", Theme.Colors.sunsetOrange, "figure.walk")
+        } else if leaveInMinutes < 15 {
+            return ("Leave in \(leaveInMinutes) min", Theme.Colors.goldenYellow, "clock.fill")
+        } else if leaveInMinutes < 60 {
+            return ("\(leaveInMinutes) min until you need to leave", Theme.Colors.connected, "checkmark.circle")
+        } else {
+            let hours = leaveInMinutes / 60
+            let mins = leaveInMinutes % 60
+            return ("\(hours)h \(mins)m until you need to leave", Theme.Colors.robotCream.opacity(0.5), "clock")
+        }
+    }
+    
+    var body: some View {
+        if let shift = nextShift, let status = leaveStatus {
+            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                HStack {
+                    Text("NEXT COMMITMENT")
+                        .font(Theme.Typography.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                        .tracking(0.5)
+                    
+                    Spacer()
+                    
+                    NavigationLink(destination: ShiftsView()) {
+                        Text("My Burn →")
+                            .font(Theme.Typography.caption)
+                            .foregroundColor(Theme.Colors.sunsetOrange)
+                    }
+                }
+                
+                HStack(spacing: Theme.Spacing.md) {
+                    // Shift icon
+                    Image(systemName: shift.location.icon)
+                        .font(.title2)
+                        .foregroundColor(Theme.Colors.turquoise)
+                        .frame(width: 44, height: 44)
+                        .background(Theme.Colors.turquoise.opacity(0.15))
+                        .cornerRadius(Theme.CornerRadius.md)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(shift.location.rawValue)
+                            .font(Theme.Typography.headline)
+                            .foregroundColor(Theme.Colors.robotCream)
+                        
+                        Text(formatTime(shift.startTime))
+                            .font(Theme.Typography.caption)
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                    }
+                    
+                    Spacer()
+                }
+                
+                // Time to leave indicator
+                HStack(spacing: Theme.Spacing.sm) {
+                    Image(systemName: status.icon)
+                        .font(.system(size: 14))
+                        .foregroundColor(status.color)
+                    
+                    Text(status.message)
+                        .font(Theme.Typography.callout)
+                        .fontWeight(status.color == Theme.Colors.emergency || status.color == Theme.Colors.sunsetOrange ? .semibold : .regular)
+                        .foregroundColor(status.color)
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(status.color.opacity(0.1))
+                .cornerRadius(Theme.CornerRadius.md)
+            }
+            .padding()
+            .background(Theme.Colors.backgroundMedium)
+            .cornerRadius(Theme.CornerRadius.lg)
+        } else {
+            // No upcoming commitments
+            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                HStack {
+                    Text("NEXT COMMITMENT")
+                        .font(Theme.Typography.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                        .tracking(0.5)
+                    
+                    Spacer()
+                    
+                    NavigationLink(destination: ShiftsView()) {
+                        Text("Find ways to contribute →")
+                            .font(Theme.Typography.caption)
+                            .foregroundColor(Theme.Colors.sunsetOrange)
+                    }
+                }
+                
+                HStack {
+                    Image(systemName: "checkmark.circle")
+                        .foregroundColor(Theme.Colors.connected)
+                    Text("You're free! Enjoy the playa.")
+                        .font(Theme.Typography.body)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                }
+                .padding()
+            }
+            .padding()
+            .background(Theme.Colors.backgroundMedium)
+            .cornerRadius(Theme.CornerRadius.lg)
+        }
+    }
+    
+    func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE h:mm a"
+        return formatter.string(from: date)
     }
 }
 

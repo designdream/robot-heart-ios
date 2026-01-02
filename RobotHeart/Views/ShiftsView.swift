@@ -29,34 +29,27 @@ struct ShiftsView: View {
                 Theme.Colors.backgroundDark.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // My Commitments - Primary view
+                    // MY BURN = "Everything about my participation"
+                    // What I'm doing + What I can do
                     ScrollView {
                         VStack(spacing: Theme.Spacing.lg) {
-                            // Status Card - What you need to do NOW
-                            MyCommitmentsStatusCard(
-                                totalCommitments: totalCommitments,
-                                urgentCount: urgentCommitments
-                            )
-                            
-                            // Active/Current commitment (if any)
+                            // SECTION 1: Active/Current commitment (if any)
                             if let activeShift = shiftManager.activeShifts.first {
                                 ActiveCommitmentCard(shift: activeShift)
                             }
                             
-                            // Today's commitments
+                            // SECTION 2: Today's commitments with time-to-leave
                             TodaysCommitmentsSection()
                             
-                            // Upcoming commitments (easy to read list)
+                            // SECTION 3: Upcoming commitments
                             UpcomingCommitmentsSection()
                             
-                            // Browse opportunities CTA
-                            OpportunitiesCTACard(
-                                availableShifts: economyManager.availableShifts.count,
-                                availableTasks: taskManager.openTasksCount,
-                                potentialPoints: potentialPoints
-                            ) {
-                                showingOpportunities = true
-                            }
+                            // SECTION 4: Ways to Contribute (inline, not sheet)
+                            // Merged from ContributeView - this is action-oriented
+                            WaysToContributeSection()
+                            
+                            // SECTION 5: Camp Superstars (celebration, not ranking)
+                            CampSuperstarsSection()
                         }
                         .padding()
                     }
@@ -1514,7 +1507,283 @@ struct OpportunitiesCTACard: View {
     }
 }
 
-// MARK: - Opportunities Marketplace View
+// MARK: - Ways to Contribute Section (Inline in My Burn)
+struct WaysToContributeSection: View {
+    @EnvironmentObject var economyManager: EconomyManager
+    @EnvironmentObject var taskManager: TaskManager
+    @State private var showingAll = false
+    
+    var availableShifts: [AnonymousShift] {
+        economyManager.availableShifts
+    }
+    
+    var availableTasks: [AdHocTask] {
+        taskManager.tasks.filter { $0.status == .open && $0.assignedTo == nil }
+    }
+    
+    var urgentCount: Int {
+        let urgentShifts = availableShifts.filter { $0.isUrgent }.count
+        let urgentTasks = availableTasks.filter { $0.priority == .high }.count
+        return urgentShifts + urgentTasks
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            // Header
+            HStack {
+                Image(systemName: "hand.raised.fill")
+                    .foregroundColor(Theme.Colors.turquoise)
+                Text("WAYS TO BURN MORE")
+                    .font(Theme.Typography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    .tracking(0.5)
+                
+                Spacer()
+                
+                if urgentCount > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 10))
+                        Text("\(urgentCount) urgent")
+                    }
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.goldenYellow)
+                }
+            }
+            
+            if availableShifts.isEmpty && availableTasks.isEmpty {
+                // All caught up
+                HStack {
+                    Image(systemName: "checkmark.circle")
+                        .foregroundColor(Theme.Colors.connected)
+                    Text("All caught up! Check back later.")
+                        .font(Theme.Typography.body)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                }
+                .padding()
+            } else {
+                // Show first few opportunities
+                let shiftsToShow = showingAll ? availableShifts : Array(availableShifts.prefix(2))
+                let tasksToShow = showingAll ? availableTasks : Array(availableTasks.prefix(2))
+                
+                ForEach(shiftsToShow) { shift in
+                    InlineOpportunityRow(
+                        icon: shift.location.icon,
+                        title: shift.location.rawValue,
+                        subtitle: formatTime(shift.startTime),
+                        burn: shift.totalPoints,
+                        isUrgent: shift.isUrgent,
+                        type: .shift
+                    ) {
+                        _ = economyManager.claimShift(shift)
+                    }
+                }
+                
+                ForEach(tasksToShow) { task in
+                    InlineOpportunityRow(
+                        icon: "checkmark.circle",
+                        title: task.title,
+                        subtitle: task.priority.shortLabel,
+                        burn: task.pointsValue,
+                        isUrgent: task.priority == .high,
+                        type: .task
+                    ) {
+                        if let index = taskManager.tasks.firstIndex(where: { $0.id == task.id }) {
+                            taskManager.tasks[index].assignedTo = "!local"
+                            taskManager.tasks[index].assignedToName = "You"
+                        }
+                    }
+                }
+                
+                // Show more button
+                let totalCount = availableShifts.count + availableTasks.count
+                if totalCount > 4 && !showingAll {
+                    Button(action: { showingAll = true }) {
+                        HStack {
+                            Text("Show all \(totalCount) opportunities")
+                            Image(systemName: "chevron.down")
+                        }
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.sunsetOrange)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.lg)
+    }
+    
+    func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE h:mm a"
+        return formatter.string(from: date)
+    }
+}
+
+// MARK: - Inline Opportunity Row
+struct InlineOpportunityRow: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let burn: Int
+    let isUrgent: Bool
+    let type: OpportunityType
+    let action: () -> Void
+    
+    enum OpportunityType {
+        case shift, task
+    }
+    
+    @State private var showingConfirmation = false
+    
+    var color: Color {
+        type == .shift ? Theme.Colors.turquoise : Theme.Colors.sunsetOrange
+    }
+    
+    var body: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            // Icon
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(color)
+                .frame(width: 36, height: 36)
+                .background(color.opacity(0.15))
+                .cornerRadius(Theme.CornerRadius.sm)
+            
+            // Details
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(title)
+                        .font(Theme.Typography.callout)
+                        .foregroundColor(Theme.Colors.robotCream)
+                        .lineLimit(1)
+                    
+                    if isUrgent {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(Theme.Colors.goldenYellow)
+                    }
+                }
+                
+                Text(subtitle)
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+            }
+            
+            Spacer()
+            
+            // Burn + Sign up
+            Button(action: { showingConfirmation = true }) {
+                HStack(spacing: 4) {
+                    Text("+\(burn)")
+                        .font(.system(size: 14, weight: .bold))
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 14))
+                }
+                .foregroundColor(isUrgent ? Theme.Colors.backgroundDark : Theme.Colors.sunsetOrange)
+                .padding(.horizontal, Theme.Spacing.sm)
+                .padding(.vertical, Theme.Spacing.xs)
+                .background(isUrgent ? Theme.Colors.goldenYellow : Theme.Colors.sunsetOrange.opacity(0.15))
+                .cornerRadius(Theme.CornerRadius.full)
+            }
+        }
+        .padding(Theme.Spacing.sm)
+        .background(Theme.Colors.backgroundLight)
+        .cornerRadius(Theme.CornerRadius.md)
+        .alert(type == .shift ? "Sign Up?" : "Take This Task?", isPresented: $showingConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button(type == .shift ? "Sign Up" : "I'll Do It") {
+                action()
+            }
+        } message: {
+            Text("You'll earn \(burn) burn for this.")
+        }
+    }
+}
+
+// MARK: - Camp Superstars Section (Celebration, not ranking)
+struct CampSuperstarsSection: View {
+    @EnvironmentObject var economyManager: EconomyManager
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            HStack {
+                Image(systemName: "sparkles")
+                    .foregroundColor(Theme.Colors.goldenYellow)
+                Text("CAMP SUPERSTARS")
+                    .font(Theme.Typography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    .tracking(0.5)
+            }
+            
+            Text("Celebrating those who make Robot Heart possible")
+                .font(Theme.Typography.caption)
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.4))
+            
+            if economyManager.leaderboard.isEmpty {
+                Text("Be the first to contribute!")
+                    .font(Theme.Typography.body)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    .italic()
+                    .padding()
+            } else {
+                // Top 5 contributors (celebration, not numbered ranking)
+                ForEach(Array(economyManager.leaderboard.prefix(5).enumerated()), id: \.element.id) { index, entry in
+                    HStack(spacing: Theme.Spacing.md) {
+                        // Avatar
+                        Circle()
+                            .fill(index == 0 ? Theme.Colors.goldenYellow : Theme.Colors.backgroundLight)
+                            .frame(width: 32, height: 32)
+                            .overlay(
+                                Text(String(entry.memberName.prefix(2)).uppercased())
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(index == 0 ? Theme.Colors.backgroundDark : Theme.Colors.robotCream)
+                            )
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Text(entry.memberName)
+                                    .font(Theme.Typography.callout)
+                                    .fontWeight(index == 0 ? .semibold : .regular)
+                                    .foregroundColor(Theme.Colors.robotCream)
+                                
+                                if index == 0 {
+                                    Image(systemName: "star.fill")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(Theme.Colors.goldenYellow)
+                                }
+                            }
+                            
+                            Text("\(entry.shiftsCompleted) contributions")
+                                .font(Theme.Typography.caption)
+                                .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                        }
+                        
+                        Spacer()
+                        
+                        // Reliability (not points - focus on dependability)
+                        if entry.reliability >= 0.95 {
+                            Text("Never missed")
+                                .font(Theme.Typography.caption)
+                                .foregroundColor(Theme.Colors.connected)
+                        }
+                    }
+                    .padding(.vertical, Theme.Spacing.xs)
+                }
+            }
+        }
+        .padding()
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.lg)
+    }
+}
+
+// MARK: - Opportunities Marketplace View (Legacy - kept for compatibility)
 struct OpportunitiesMarketplaceView: View {
     @EnvironmentObject var economyManager: EconomyManager
     @EnvironmentObject var taskManager: TaskManager

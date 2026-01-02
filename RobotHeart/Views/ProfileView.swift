@@ -14,7 +14,10 @@ struct ProfileView: View {
                 
                 ScrollView {
                     VStack(spacing: Theme.Spacing.lg) {
-                        // MY QR CODE - Big and prominent for others to scan
+                        // ME = "Who am I in this community?"
+                        // Identity + reputation + connections
+                        
+                        // SECTION 1: MY QR CODE - Big and prominent for others to scan
                         MyQRCodeCard(profile: profileManager.myProfile)
                         
                         // Scan button - to scan others
@@ -33,27 +36,31 @@ struct ProfileView: View {
                             .cornerRadius(Theme.CornerRadius.md)
                         }
                         
-                        // Quick stats
-                        ProfileStats()
+                        // SECTION 2: YOUR BURN STORY - Identity in the community
+                        // (Moved from Home - this is identity, not action)
+                        YourBurnStoryCard()
+                        
+                        // SECTION 3: My Connections
+                        MyConnectionsCard()
                         
                         // Contact requests
                         if profileManager.pendingRequestsCount > 0 {
                             ContactRequestsSection()
                         }
                         
-                        // Edit profile link
-                        NavigationLink(destination: EditProfileView()) {
-                            SettingsRow(icon: "pencil.circle.fill", title: "Edit Profile", color: Theme.Colors.sunsetOrange)
-                        }
-                        
-                        // Settings
-                        NavigationLink(destination: SettingsView()) {
-                            SettingsRow(icon: "gearshape.fill", title: "Settings", color: Theme.Colors.robotCream.opacity(0.7))
-                        }
-                        
-                        // Knowledge Base / Survival Guide
-                        NavigationLink(destination: KnowledgeBaseView()) {
-                            SettingsRow(icon: "book.fill", title: "Survival Guide", color: Theme.Colors.goldenYellow)
+                        // SECTION 4: Profile & Settings
+                        VStack(spacing: Theme.Spacing.sm) {
+                            NavigationLink(destination: EditProfileView()) {
+                                SettingsRow(icon: "pencil.circle.fill", title: "Edit Profile", color: Theme.Colors.sunsetOrange)
+                            }
+                            
+                            NavigationLink(destination: SettingsView()) {
+                                SettingsRow(icon: "gearshape.fill", title: "Settings", color: Theme.Colors.robotCream.opacity(0.7))
+                            }
+                            
+                            NavigationLink(destination: KnowledgeBaseView()) {
+                                SettingsRow(icon: "book.fill", title: "Survival Guide", color: Theme.Colors.goldenYellow)
+                            }
                         }
                     }
                     .padding()
@@ -147,14 +154,200 @@ struct ProfilePhotoView: View {
     }
 }
 
-// MARK: - Profile Stats
+// MARK: - Your Burn Story Card
+/// Identity in the community - moved from Home (this is who you are, not what to do)
+struct YourBurnStoryCard: View {
+    @EnvironmentObject var economyManager: EconomyManager
+    
+    var trustLevel: (name: String, color: Color, icon: String) {
+        let shifts = economyManager.myStanding.shiftsCompleted
+        switch shifts {
+        case 20...: return ("Legendary", Theme.Colors.goldenYellow, "star.fill")
+        case 10..<20: return ("Superstar", Theme.Colors.sunsetOrange, "star.fill")
+        case 5..<10: return ("Reliable", Theme.Colors.connected, "checkmark.seal.fill")
+        case 3..<5: return ("Contributing", Theme.Colors.turquoise, "hand.raised.fill")
+        case 1..<3: return ("Improving", Theme.Colors.robotCream.opacity(0.7), "arrow.up.circle")
+        default: return ("New", Theme.Colors.robotCream.opacity(0.5), "person.badge.plus")
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            // Header
+            HStack {
+                Image(systemName: "flame.fill")
+                    .foregroundColor(Theme.Colors.sunsetOrange)
+                Text("YOUR BURN")
+                    .font(Theme.Typography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    .tracking(0.5)
+                
+                Spacer()
+                
+                // Trust level badge
+                HStack(spacing: 4) {
+                    Image(systemName: trustLevel.icon)
+                        .font(.system(size: 12))
+                    Text(trustLevel.name)
+                        .font(Theme.Typography.caption)
+                        .fontWeight(.semibold)
+                }
+                .foregroundColor(trustLevel.color)
+                .padding(.horizontal, Theme.Spacing.sm)
+                .padding(.vertical, Theme.Spacing.xs)
+                .background(trustLevel.color.opacity(0.15))
+                .cornerRadius(Theme.CornerRadius.full)
+            }
+            
+            // Stats row - using "burn" terminology
+            HStack(spacing: Theme.Spacing.lg) {
+                VStack(spacing: 4) {
+                    Text("\(economyManager.myStanding.pointsEarned)")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(Theme.Colors.sunsetOrange)
+                    Text("Burn Earned")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                }
+                
+                VStack(spacing: 4) {
+                    Text("\(economyManager.myStanding.shiftsCompleted)")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(Theme.Colors.turquoise)
+                    Text("Contributions")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                }
+                
+                VStack(spacing: 4) {
+                    Text("\(Int(economyManager.myStanding.reliabilityScore * 100))%")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(reliabilityColor)
+                    Text("Show Rate")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                }
+            }
+            .frame(maxWidth: .infinity)
+            
+            // Motivational message
+            Text(motivationalMessage)
+                .font(Theme.Typography.caption)
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                .italic()
+        }
+        .padding()
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.lg)
+    }
+    
+    var reliabilityColor: Color {
+        let score = economyManager.myStanding.reliabilityScore
+        if score >= 0.95 { return Theme.Colors.connected }
+        if score >= 0.8 { return Theme.Colors.goldenYellow }
+        return Theme.Colors.emergency
+    }
+    
+    var motivationalMessage: String {
+        let shifts = economyManager.myStanding.shiftsCompleted
+        switch shifts {
+        case 20...: return "\"You are the heart of Robot Heart.\""
+        case 10..<20: return "\"Your dedication inspires others.\""
+        case 5..<10: return "\"The camp counts on you.\""
+        case 3..<5: return "\"Every contribution matters.\""
+        case 1..<3: return "\"Great start! Keep burning.\""
+        default: return "\"Ready to make your mark?\""
+        }
+    }
+}
+
+// MARK: - My Connections Card
+struct MyConnectionsCard: View {
+    @EnvironmentObject var profileManager: ProfileManager
+    @EnvironmentObject var meshtasticManager: MeshtasticManager
+    
+    var connections: [CampMember] {
+        meshtasticManager.campMembers.filter { profileManager.approvedContacts.contains($0.id) }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            HStack {
+                Image(systemName: "heart.fill")
+                    .foregroundColor(Theme.Colors.dustyPink)
+                Text("MY CONNECTIONS")
+                    .font(Theme.Typography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    .tracking(0.5)
+                
+                Spacer()
+                
+                Text("\(profileManager.approvedContacts.count)")
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+            }
+            
+            if connections.isEmpty {
+                HStack {
+                    Image(systemName: "person.2.slash")
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+                    Text("Scan QR codes to connect with people")
+                        .font(Theme.Typography.body)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                }
+                .padding()
+            } else {
+                // Show first few connections
+                ForEach(connections.prefix(3)) { member in
+                    HStack(spacing: Theme.Spacing.md) {
+                        Circle()
+                            .fill(member.isOnline ? Theme.Colors.connected : Theme.Colors.backgroundLight)
+                            .frame(width: 32, height: 32)
+                            .overlay(
+                                Text(String(member.name.prefix(2)).uppercased())
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(member.isOnline ? .white : Theme.Colors.robotCream)
+                            )
+                        
+                        Text(member.name)
+                            .font(Theme.Typography.body)
+                            .foregroundColor(Theme.Colors.robotCream)
+                        
+                        Spacer()
+                        
+                        if member.isOnline {
+                            Text("Online")
+                                .font(Theme.Typography.caption)
+                                .foregroundColor(Theme.Colors.connected)
+                        }
+                    }
+                }
+                
+                if connections.count > 3 {
+                    NavigationLink(destination: CommunityHubView()) {
+                        Text("See all \(connections.count) connections →")
+                            .font(Theme.Typography.caption)
+                            .foregroundColor(Theme.Colors.sunsetOrange)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.lg)
+    }
+}
+
+// MARK: - Profile Stats (Legacy - kept for compatibility)
 struct ProfileStats: View {
     @EnvironmentObject var shiftBlockManager: ShiftBlockManager
     @EnvironmentObject var economyManager: EconomyManager
     
     var body: some View {
         HStack(spacing: Theme.Spacing.lg) {
-            ProfileStatItem(value: "\(economyManager.myStanding.pointsEarned)", label: "Points")
+            ProfileStatItem(value: "\(economyManager.myStanding.pointsEarned)", label: "Burn")
             ProfileStatItem(value: "\(shiftBlockManager.myShiftBlocks.count)", label: "Shifts")
             ProfileStatItem(value: "\(Int(economyManager.myStanding.reliabilityScore * 100))%", label: "Reliability")
         }
