@@ -6,7 +6,9 @@ struct SettingsView: View {
     @EnvironmentObject var shiftManager: ShiftManager
     @EnvironmentObject var checkInManager: CheckInManager
     @EnvironmentObject var biometricAuthManager: BiometricAuthManager
+    @EnvironmentObject var economyManager: EconomyManager
     @State private var userName = "You"
+    @State private var showingResetConfirmation = false
     @State private var selectedRole: CampMember.Role = .general
     @State private var shareInterval: Double = 15
     @State private var showingDeviceScanner = false
@@ -352,6 +354,34 @@ struct SettingsView: View {
                         Text("About")
                             .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
                     }
+                    
+                    // Developer / Debug section
+                    Section {
+                        // Show current burn stats
+                        HStack {
+                            Text("Your Burn")
+                                .foregroundColor(Theme.Colors.robotCream)
+                            Spacer()
+                            Text("\(economyManager.myStanding.pointsEarned) burn, \(economyManager.myStanding.shiftsCompleted) contributions")
+                                .font(Theme.Typography.caption)
+                                .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                        }
+                        
+                        // Reset burn data
+                        Button(action: { showingResetConfirmation = true }) {
+                            HStack {
+                                Image(systemName: "arrow.counterclockwise")
+                                Text("Reset Burn Data")
+                            }
+                            .foregroundColor(Theme.Colors.emergency)
+                        }
+                    } header: {
+                        Text("Developer")
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                    } footer: {
+                        Text("Reset will clear your contribution history. Use for testing only.")
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    }
                 }
                 .scrollContentBackground(.hidden)
             }
@@ -368,6 +398,14 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showingPrivacySettings) {
                 SCPrivacySettingsView()
+            }
+            .alert("Reset Burn Data?", isPresented: $showingResetConfirmation) {
+                Button("Cancel", role: .cancel) { }
+                Button("Reset", role: .destructive) {
+                    economyManager.resetStanding()
+                }
+            } message: {
+                Text("This will reset your contribution history to 0. This cannot be undone.")
             }
         }
     }
@@ -393,4 +431,5 @@ struct SettingsView: View {
         .environmentObject(ShiftManager())
         .environmentObject(CheckInManager())
         .environmentObject(BiometricAuthManager.shared)
+        .environmentObject(EconomyManager())
 }

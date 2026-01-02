@@ -195,6 +195,16 @@ class EconomyManager: ObservableObject {
         saveStanding()
     }
     
+    // MARK: - Reset Standing (for testing/debugging)
+    func resetStanding() {
+        myStanding = ParticipantStanding(id: currentUserID)
+        myClaims = []
+        activePenalties = []
+        saveStanding()
+        saveClaims()
+        savePenalties()
+    }
+    
     // MARK: - Privilege Check
     func hasPrivilege(_ privilege: ShiftEconomy.Privilege) -> Bool {
         myStanding.activePrivileges.contains(privilege)
