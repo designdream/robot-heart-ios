@@ -101,41 +101,24 @@ struct HomeView: View {
                 }
                 
                 ToolbarItem(placement: .principal) {
-                    // Pull-down trigger in center
+                    // Logo only - branding, no action
+                    Image("RobotHeartLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 28)
+                        .clipShape(Circle())
+                }
+                
+                // Quick Actions - Plus icon
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         withAnimation(.spring()) {
                             showingQuickActions.toggle()
                         }
                     }) {
-                        HStack(spacing: Theme.Spacing.xs) {
-                            Image("RobotHeartLogo")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 28)
-                                .clipShape(Circle())
-                            
-                            Image(systemName: showingQuickActions ? "chevron.up" : "chevron.down")
-                                .font(.caption)
-                                .foregroundColor(Theme.Colors.sunsetOrange)
-                        }
-                    }
-                }
-                
-                // Direct Messages - Most valuable real estate (replaces settings)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(destination: DirectMessagesView()) {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "message.fill")
-                                .foregroundColor(Theme.Colors.robotCream)
-                            
-                            // Unread badge
-                            if announcementManager.unreadCount > 0 {
-                                Circle()
-                                    .fill(Theme.Colors.sunsetOrange)
-                                    .frame(width: 8, height: 8)
-                                    .offset(x: 2, y: -2)
-                            }
-                        }
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                            .foregroundColor(Theme.Colors.sunsetOrange)
                     }
                 }
             }

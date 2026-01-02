@@ -85,9 +85,9 @@ struct QuickActionsContent: View {
     
     var body: some View {
         VStack(spacing: Theme.Spacing.md) {
-            // Row 1: Critical / Safety
+            // Simplified: Only essential actions not easily accessible via tabs
             HStack(spacing: Theme.Spacing.md) {
-                // SOS - Most important
+                // SOS - Emergency (critical)
                 QuickActionItem(
                     icon: "sos",
                     label: "SOS",
@@ -98,7 +98,18 @@ struct QuickActionsContent: View {
                     onDismiss()
                 }
                 
-                // Ghost Mode - Quick privacy toggle
+                // Check In - Safety
+                QuickActionItem(
+                    icon: "checkmark.shield.fill",
+                    label: "Check In",
+                    color: Theme.Colors.connected
+                ) {
+                    onNavigate(.checkIn)
+                }
+            }
+            
+            HStack(spacing: Theme.Spacing.md) {
+                // Ghost Mode - Privacy toggle
                 QuickActionItem(
                     icon: locationManager.isLocationPrivate ? "eye.slash.fill" : "eye.fill",
                     label: locationManager.isLocationPrivate ? "Visible" : "Ghost",
@@ -112,67 +123,13 @@ struct QuickActionsContent: View {
                     onDismiss()
                 }
                 
-                // Check In
+                // Scan QR - Connect with someone
                 QuickActionItem(
-                    icon: "checkmark.shield.fill",
-                    label: "Check In",
-                    color: Theme.Colors.connected
-                ) {
-                    onNavigate(.checkIn)
-                }
-            }
-            
-            // Row 2: Connect (Community-first)
-            HStack(spacing: Theme.Spacing.md) {
-                QuickActionItem(
-                    icon: "message.fill",
-                    label: "Message",
-                    color: Theme.Colors.turquoise
-                ) {
-                    onNavigate(.messages)
-                }
-                
-                QuickActionItem(
-                    icon: "person.fill",
-                    label: "Find",
-                    color: Theme.Colors.dustyPink
-                ) {
-                    onNavigate(.findPerson)
-                }
-                
-                QuickActionItem(
-                    icon: "qrcode",
-                    label: "Connect",
+                    icon: "qrcode.viewfinder",
+                    label: "Scan QR",
                     color: Theme.Colors.sunsetOrange
                 ) {
                     onNavigate(.qrCode)
-                }
-            }
-            
-            // Row 3: Navigate / Do
-            HStack(spacing: Theme.Spacing.md) {
-                QuickActionItem(
-                    icon: "map.fill",
-                    label: "Places",
-                    color: Theme.Colors.turquoise
-                ) {
-                    onNavigate(.map)
-                }
-                
-                QuickActionItem(
-                    icon: "flame.fill",
-                    label: "My Burn",
-                    color: Theme.Colors.goldenYellow
-                ) {
-                    onNavigate(.commitments)
-                }
-                
-                QuickActionItem(
-                    icon: "sparkles",
-                    label: "Events",
-                    color: Theme.Colors.dustyPink
-                ) {
-                    onNavigate(.events)
                 }
             }
         }
