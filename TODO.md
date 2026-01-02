@@ -11,6 +11,8 @@
 |------|--------|-------|-------|
 | Test Meshtastic with real T1000-E device | `pending` | Device arriving this week | 2026-01-01 |
 | Refactor architecture (Phase 1) | `done` | AppEnvironment + NetworkOrchestrator | 2026-01-02 |
+| Implement 4-layer network architecture | `done` | Cloud + LoRa + BLE + Local | 2026-01-02 |
+| Add Digital Ocean S3 cloud sync | `done` | CloudSyncService with gateway nodes | 2026-01-02 |
 
 ---
 
@@ -69,7 +71,19 @@
 
 ## 📋 Session Notes
 
-### 2026-01-02 Session
+### 2026-01-02 Session (Phase 2)
+- **4-Layer Network Architecture Complete**
+- Designed comprehensive multi-layer strategy (Cloud → LoRa → BLE → Local)
+- Implemented `CloudSyncService` with Digital Ocean S3 integration
+- Added automatic gateway node promotion (devices with internet bridge mesh ↔ cloud)
+- Implemented store-and-forward with exponential backoff retry
+- Updated `NetworkOrchestrator` for 4-layer intelligent routing
+- Emergency messages now broadcast via ALL available layers (redundancy)
+- Created `docs/NETWORK_LAYERS.md` with complete architecture documentation
+- Started Meshtastic service decomposition (`MeshtasticConnectionService`)
+- Cost-effective: <$1/month for 10,000 messages/day on Digital Ocean
+
+### 2026-01-02 Session (Phase 1)
 - **Phase 1 Architectural Refactoring Complete**
 - Created `AppEnvironment` for centralized dependency injection (replaces 22 individual managers)
 - Created `NetworkOrchestrator` to manage Meshtastic + BLE coexistence and prevent conflicts

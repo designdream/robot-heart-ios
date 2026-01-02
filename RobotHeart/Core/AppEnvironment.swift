@@ -31,8 +31,8 @@ class AppEnvironment: ObservableObject {
     /// Message queue for offline-first messaging
     @Published var messageQueue: MessageQueueManager
     
-    /// Cloud sync for gateway nodes
-    @Published var cloudSync: CloudSyncManager
+    /// Cloud sync for gateway nodes (Digital Ocean S3)
+    @Published var cloudSync: CloudSyncService
     
     /// Camp network discovery
     @Published var campNetwork: CampNetworkManager
@@ -103,15 +103,18 @@ class AppEnvironment: ObservableObject {
         self.location = LocationManager()
         self.localData = LocalDataManager.shared
         
-        // Initialize network orchestrator (depends on meshtastic and bleMesh)
+        // Initialize cloud sync service
+        self.cloudSync = CloudSyncService()
+        
+        // Initialize network orchestrator (depends on cloudSync, meshtastic, and bleMesh)
         self.networkOrchestrator = NetworkOrchestrator(
+            cloudSync: cloudSync,
             meshtastic: meshtastic,
             bleMesh: bleMesh
         )
         
         // Initialize messaging services
         self.messageQueue = MessageQueueManager.shared
-        self.cloudSync = CloudSyncManager.shared
         self.campNetwork = CampNetworkManager.shared
         
         // Initialize location and safety services
