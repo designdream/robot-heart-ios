@@ -45,11 +45,11 @@ struct HomeView: View {
                             }
                         }
                         
-                        // PRIORITY 5: Connection status (are you connected to mesh?)
-                        ConnectionCard()
-                        
-                        // PRIORITY 6: Upcoming Events (social discovery)
+                        // PRIORITY 5: Upcoming Events (social discovery)
                         UpcomingEventsCard()
+                        
+                        // NOTE: Connection status moved to Settings → Mesh Diagnostics
+                        // Home should be glanceable, not for device management
                         
                         // NOTE: Social Capital moved to "Me" tab - it's identity, not action
                     }
