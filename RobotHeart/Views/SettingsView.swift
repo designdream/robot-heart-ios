@@ -5,6 +5,7 @@ struct SettingsView: View {
     @EnvironmentObject var locationManager: LocationManager
     @EnvironmentObject var shiftManager: ShiftManager
     @EnvironmentObject var checkInManager: CheckInManager
+    @EnvironmentObject var biometricAuthManager: BiometricAuthManager
     @State private var userName = "You"
     @State private var selectedRole: CampMember.Role = .general
     @State private var shareInterval: Double = 15
@@ -186,6 +187,49 @@ struct SettingsView: View {
                             .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
                     }
                     
+                    // Security & Biometrics
+                    Section {
+                        Toggle(isOn: Binding(
+                            get: { biometricAuthManager.isEnabled },
+                            set: { biometricAuthManager.isEnabled = $0 }
+                        )) {
+                            HStack {
+                                Image(systemName: biometricIcon)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(biometricAuthManager.biometricType.rawValue) Lock")
+                                    Text("Require authentication to open app")
+                                        .font(Theme.Typography.caption)
+                                        .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                                }
+                            }
+                            .foregroundColor(Theme.Colors.robotCream)
+                        }
+                        .tint(Theme.Colors.sunsetOrange)
+                        .disabled(!biometricAuthManager.isBiometricAvailable)
+                        
+                        if biometricAuthManager.isEnabled {
+                            Toggle(isOn: Binding(
+                                get: { biometricAuthManager.requireAuthOnLaunch },
+                                set: { biometricAuthManager.requireAuthOnLaunch = $0 }
+                            )) {
+                                HStack {
+                                    Image(systemName: "lock.shield.fill")
+                                    Text("Lock on App Launch")
+                                }
+                                .foregroundColor(Theme.Colors.robotCream)
+                            }
+                            .tint(Theme.Colors.sunsetOrange)
+                        }
+                    } header: {
+                        Text("Security")
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                    } footer: {
+                        Text(biometricAuthManager.isBiometricAvailable ?
+                             "Biometric authentication works completely offline - perfect for the playa." :
+                             "No biometric authentication available on this device.")
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    }
+                    
                     // Admin settings
                     Section {
                         Toggle(isOn: Binding(
@@ -268,6 +312,19 @@ struct SettingsView: View {
             }
         }
     }
+    
+    private var biometricIcon: String {
+        switch biometricAuthManager.biometricType {
+        case .faceID:
+            return "faceid"
+        case .touchID:
+            return "touchid"
+        case .opticID:
+            return "opticid"
+        case .none:
+            return "lock.fill"
+        }
+    }
 }
 
 #Preview {
@@ -276,4 +333,5 @@ struct SettingsView: View {
         .environmentObject(LocationManager())
         .environmentObject(ShiftManager())
         .environmentObject(CheckInManager())
+        .environmentObject(BiometricAuthManager.shared)
 }

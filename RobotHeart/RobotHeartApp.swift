@@ -29,6 +29,10 @@ struct RobotHeartApp: App {
     @StateObject private var cloudSyncManager = CloudSyncManager.shared
     @StateObject private var campNetworkManager = CampNetworkManager.shared
     
+    // Biometric authentication
+    @StateObject private var biometricAuthManager = BiometricAuthManager.shared
+    @State private var isUnlocked = false
+    
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     init() {
@@ -38,7 +42,16 @@ struct RobotHeartApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if hasCompletedOnboarding {
+            if !hasCompletedOnboarding {
+                OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+                    .environmentObject(profileManager)
+                    .environmentObject(biometricAuthManager)
+                    .preferredColorScheme(.dark)
+            } else if !isUnlocked && biometricAuthManager.isEnabled {
+                BiometricLockView(isUnlocked: $isUnlocked)
+                    .environmentObject(biometricAuthManager)
+                    .preferredColorScheme(.dark)
+            } else {
                 MainAppView()
                     .environment(\.managedObjectContext, persistenceController.viewContext)
                     .environmentObject(meshtasticManager)
@@ -59,16 +72,37 @@ struct RobotHeartApp: App {
                     .environmentObject(messageQueueManager)
                     .environmentObject(cloudSyncManager)
                     .environmentObject(campNetworkManager)
+                    .environmentObject(biometricAuthManager)
                     .preferredColorScheme(.dark)
                     .onAppear {
                         shiftManager.requestNotificationPermissions()
                         startOfflineServices()
                     }
-            } else {
-                OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
-                    .environmentObject(profileManager)
-                    .preferredColorScheme(.dark)
             }
+        }
+        .onChange(of: scenePhase) { newPhase in
+            handleScenePhaseChange(to: newPhase)
+        }
+    }
+    
+    @Environment(\.scenePhase) private var scenePhase
+    
+    private func handleScenePhaseChange(to newPhase: ScenePhase) {
+        switch newPhase {
+        case .background:
+            // Lock app when going to background
+            if biometricAuthManager.isEnabled {
+                isUnlocked = false
+            }
+        case .active:
+            // Check if we need to re-authenticate
+            if biometricAuthManager.needsReauthentication {
+                isUnlocked = false
+            }
+        case .inactive:
+            break
+        @unknown default:
+            break
         }
     }
     
