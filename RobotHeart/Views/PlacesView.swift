@@ -318,8 +318,8 @@ struct DiscoveredCampCard: View {
     }
 }
 
-// MARK: - Community View (People/Roster)
-/// Renamed from "Roster" to "Community" for warmer, more personal feel
+// MARK: - Community View (People)
+/// Community-focused view for warmer, more personal feel
 struct CommunityView: View {
     @EnvironmentObject var meshtasticManager: MeshtasticManager
     @EnvironmentObject var checkInManager: CheckInManager

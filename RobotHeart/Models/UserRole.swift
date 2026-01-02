@@ -101,7 +101,7 @@ struct FeatureFlags: Codable {
         case campShifts = "Camp Shifts"
         case campTasks = "Camp Tasks"
         case campLayout = "Camp Layout Planner"
-        case campRoster = "Camp Roster"
+        case campCommunity = "Camp Community"
         case campChat = "Camp Messaging"
         case playaMap = "Playa Map"
         case draftParticipation = "Shift Draft"
@@ -137,7 +137,7 @@ struct FeatureFlags: Codable {
             case .campShifts: return "calendar.badge.clock"
             case .campTasks: return "checkmark.circle"
             case .campLayout: return "map.fill"
-            case .campRoster: return "person.3.fill"
+            case .campCommunity: return "person.3.fill"
             case .campChat: return "message.fill"
             case .playaMap: return "location.fill"
             case .draftParticipation: return "sportscourt.fill"
@@ -167,7 +167,7 @@ struct FeatureFlags: Codable {
                 return .volunteer
                 
             // Camp member features
-            case .campShifts, .campTasks, .campLayout, .campRoster, .campChat,
+            case .campShifts, .campTasks, .campLayout, .campCommunity, .campChat,
                  .playaMap, .draftParticipation, .safetyFeatures:
                 return .campMember
                 
@@ -189,7 +189,7 @@ struct FeatureFlags: Codable {
                 return .community
             case .volunteerShifts, .volunteerTasks, .eventCheckIn, .volunteerChat:
                 return .volunteering
-            case .campShifts, .campTasks, .campLayout, .campRoster, .campChat,
+            case .campShifts, .campTasks, .campLayout, .campCommunity, .campChat,
                  .playaMap, .draftParticipation, .safetyFeatures:
                 return .camp
             case .memberManagement, .shiftCreation, .taskCreation, .announcements,

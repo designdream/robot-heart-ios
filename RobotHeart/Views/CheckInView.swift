@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Check-In Card (for home/roster view)
+// MARK: - Check-In Card (for home view)
 struct CheckInCard: View {
     @EnvironmentObject var checkInManager: CheckInManager
     @State private var showingConfirmation = false

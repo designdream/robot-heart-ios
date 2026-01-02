@@ -36,7 +36,6 @@
 		685BE2E7ACED3A9956A5E257 /* ProfileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7C4A9D3BABA36681F7DD63 /* ProfileManager.swift */; };
 		68810EBE09B0982F45C72ACC /* RoleSwitcherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5AB37ED91AD2295B7C8A3D /* RoleSwitcherView.swift */; };
 		698C78F276EB5B1E31FBF440 /* EmergencyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A46D54A5E4939F219EB5EC /* EmergencyManager.swift */; };
-		6F3911D5BBC72A5879C370AB /* RosterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 410B8F5385FC91BAD6881DBF /* RosterView.swift */; };
 		70C9F702476FE93ADBB5101E /* DiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E55CAB16B0EB22B457CAFDCA /* DiagnosticsView.swift */; };
 		72BAB5EE7955AA313153A5F8 /* SocialModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CFF2BE4DBC52E1B2D05A084 /* SocialModels.swift */; };
 		7492C9BF2575FC14A2C9A7CB /* MemberDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82593471A1DE7F22B252CE08 /* MemberDetailView.swift */; };
@@ -103,7 +102,6 @@
 		25B619933CB044DE8002E802 /* RoleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleManager.swift; sourceTree = "<group>"; };
 		38EC557D817E03087B98E5EF /* SocialCapitalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialCapitalDetailView.swift; sourceTree = "<group>"; };
 		397E180F2C0F34BD4107949F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		410B8F5385FC91BAD6881DBF /* RosterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosterView.swift; sourceTree = "<group>"; };
 		4ADE3A765FEDD02436E31140 /* Channel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Channel.swift; sourceTree = "<group>"; };
 		4AF9E6A3FBE1F9228092A3D3 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		4D6F9299C26E68484388565E /* ShiftBlockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiftBlockManager.swift; sourceTree = "<group>"; };
@@ -245,7 +243,6 @@
 				DFBB462A61758035830F7E4B /* ProfileView.swift */,
 				00EE5AB447BB73899B8CA6D1 /* PullDownActionsView.swift */,
 				7A5AB37ED91AD2295B7C8A3D /* RoleSwitcherView.swift */,
-				410B8F5385FC91BAD6881DBF /* RosterView.swift */,
 				5AC177D51163C997242AB991 /* SettingsView.swift */,
 				93BC25AE3A969537E6A8018D /* ShiftAdminView.swift */,
 				EDA3DD95A9DC2698289450D4 /* ShiftBlockView.swift */,
@@ -440,7 +437,6 @@
 				9499975CB1923720269F6B7A /* RobotHeartData.xcdatamodeld in Sources */,
 				F3DEF944851150D91049C141 /* RoleManager.swift in Sources */,
 				68810EBE09B0982F45C72ACC /* RoleSwitcherView.swift in Sources */,
-				6F3911D5BBC72A5879C370AB /* RosterView.swift in Sources */,
 				33208EB0B838DCE095E85243 /* SettingsView.swift in Sources */,
 				666D43958A7FBEC4D74C1FB3 /* Shift.swift in Sources */,
 				9231C02D634B6AB4AE7ADF70 /* ShiftAdminView.swift in Sources */,

@@ -365,8 +365,8 @@ struct GlobalSearchView: View {
                     .tracking(0.5)
                 
                 HStack(spacing: Theme.Spacing.md) {
-                    QuickSearchButton(icon: "person.3.fill", title: "Roster") {
-                        // Navigate to roster
+                    QuickSearchButton(icon: "person.3.fill", title: "People") {
+                        // Navigate to community
                     }
                     QuickSearchButton(icon: "calendar", title: "Events") {
                         // Navigate to events
@@ -1188,8 +1188,8 @@ struct QuickActionsGrid: View {
                     QuickActionTile(icon: "checklist", title: "Tasks", color: Theme.Colors.sunsetOrange)
                 }
                 
-                NavigationLink(destination: RosterView()) {
-                    QuickActionTile(icon: "person.3.fill", title: "Roster", color: Theme.Colors.dustyPink)
+                NavigationLink(destination: CommunityHubView()) {
+                    QuickActionTile(icon: "person.3.fill", title: "People", color: Theme.Colors.dustyPink)
                 }
                 
                 NavigationLink(destination: MapView()) {
