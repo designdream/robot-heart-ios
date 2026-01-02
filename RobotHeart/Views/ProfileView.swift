@@ -16,49 +16,30 @@ struct ProfileView: View {
                 ScrollView {
                     VStack(spacing: Theme.Spacing.lg) {
                         // ME = "Who am I in this community?"
-                        // Identity + reputation + connections
+                        // Why people come here:
+                        // 1. Show off their burn (badge of honor)
+                        // 2. Show QR code for someone to scan
+                        // 3. Go ghost (privacy)
                         
                         // SECTION 1: YOUR BURN - Badge of honor, show it off!
-                        // First thing people see when you show them your profile
                         YourBurnStoryCard()
                         
-                        // SECTION 2: MY QR CODE - For connecting
+                        // SECTION 2: MY QR CODE - Big and scannable
+                        // This is the main CTA when showing your phone to someone
                         MyQRCodeCard(profile: profileManager.myProfile)
                         
-                        // Scan button - to scan others
-                        Button(action: { showingScanner = true }) {
-                            HStack {
-                                Image(systemName: "qrcode.viewfinder")
-                                    .font(.title2)
-                                Text("Scan Someone's Code")
-                                    .font(Theme.Typography.callout)
-                                    .fontWeight(.semibold)
-                            }
-                            .foregroundColor(Theme.Colors.backgroundDark)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Theme.Colors.turquoise)
-                            .cornerRadius(Theme.CornerRadius.md)
-                        }
-                        
-                        // GHOST MODE - Easy access toggle for privacy
+                        // GHOST MODE - Quick privacy toggle
                         GhostModeToggle()
                         
-                        // NOTE: My Connections moved to Community tab - that's where people belong
-                        
-                        // Contact requests
+                        // Contact requests (if any)
                         if profileManager.pendingRequestsCount > 0 {
                             ContactRequestsSection()
                         }
                         
-                        // SECTION 4: Profile & Settings
+                        // Quick links (less prominent)
                         VStack(spacing: Theme.Spacing.sm) {
                             NavigationLink(destination: EditProfileView()) {
                                 SettingsRow(icon: "pencil.circle.fill", title: "Edit Profile", color: Theme.Colors.sunsetOrange)
-                            }
-                            
-                            NavigationLink(destination: SettingsView()) {
-                                SettingsRow(icon: "gearshape.fill", title: "Settings", color: Theme.Colors.robotCream.opacity(0.7))
                             }
                             
                             NavigationLink(destination: KnowledgeBaseView()) {
@@ -69,8 +50,30 @@ struct ProfileView: View {
                     .padding()
                 }
             }
-            .navigationTitle("Me")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Me")
+                        .font(Theme.Typography.title2)
+                        .foregroundColor(Theme.Colors.robotCream)
+                }
+                
+                ToolbarItem(placement: .navigationBarLeading) {
+                    // Scan QR - most common action (you just met someone)
+                    Button(action: { showingScanner = true }) {
+                        Image(systemName: "camera.fill")
+                            .foregroundColor(Theme.Colors.turquoise)
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    // Settings - less frequent
+                    NavigationLink(destination: SettingsView()) {
+                        Image(systemName: "gearshape.fill")
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                    }
+                }
+            }
             .sheet(isPresented: $showingScanner) {
                 ContactScannerView()
             }
