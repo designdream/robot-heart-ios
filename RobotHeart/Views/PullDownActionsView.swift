@@ -71,7 +71,7 @@ struct PullDownActionsOverlay: View {
 
 // MARK: - Quick Action Destinations
 enum QuickActionDestination: Identifiable {
-    case messages, tasks, commitments, qrCode, map, guide, events, checkIn, findPerson, addTask
+    case messages, tasks, commitments, qrCode, map, guide, events, checkIn, findPerson, addTask, addAnnouncement
     var id: Self { self }
 }
 
@@ -82,6 +82,7 @@ struct QuickActionsContent: View {
     let onNavigate: (QuickActionDestination) -> Void
     @EnvironmentObject var emergencyManager: EmergencyManager
     @EnvironmentObject var locationManager: LocationManager
+    @EnvironmentObject var shiftManager: ShiftManager
     
     var body: some View {
         VStack(spacing: Theme.Spacing.md) {
@@ -126,11 +127,22 @@ struct QuickActionsContent: View {
             HStack(spacing: Theme.Spacing.md) {
                 // Add Task - quick create
                 QuickActionItem(
-                    icon: "plus.circle.fill",
+                    icon: "checklist",
                     label: "Add Task",
                     color: Theme.Colors.turquoise
                 ) {
                     onNavigate(.addTask)
+                }
+                
+                // Add Announcement - admin only
+                if shiftManager.isAdmin {
+                    QuickActionItem(
+                        icon: "megaphone.fill",
+                        label: "Announce",
+                        color: Theme.Colors.goldenYellow
+                    ) {
+                        onNavigate(.addAnnouncement)
+                    }
                 }
                 
                 // Scan QR - Connect with someone

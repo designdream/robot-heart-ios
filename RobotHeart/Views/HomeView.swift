@@ -93,6 +93,10 @@ struct HomeView: View {
                     NavigationLink(tag: .addTask, selection: $quickActionNavigation) {
                         AddTaskView(preselectedArea: nil)
                     } label: { EmptyView() }
+                    
+                    NavigationLink(tag: .addAnnouncement, selection: $quickActionNavigation) {
+                        CreateAnnouncementView()
+                    } label: { EmptyView() }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -1338,15 +1342,6 @@ struct AnnouncementsSection: View {
                         .padding(.vertical, 2)
                         .background(hasUrgent ? Theme.Colors.emergency : Theme.Colors.sunsetOrange)
                         .cornerRadius(Theme.CornerRadius.full)
-                }
-                
-                // Admin add button
-                if shiftManager.isAdmin {
-                    Button(action: { showingCreateAnnouncement = true }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                            .foregroundColor(Theme.Colors.sunsetOrange)
-                    }
                 }
                 
                 NavigationLink(destination: AnnouncementsListView()) {
