@@ -555,8 +555,48 @@ struct DirectMessageView: View {
                 .background(Theme.Colors.backgroundMedium)
             }
         }
-        .navigationTitle(member.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                // Tappable name to view profile
+                NavigationLink(destination: CommunityMemberDetailView(member: member)) {
+                    HStack(spacing: Theme.Spacing.sm) {
+                        // Avatar
+                        ZStack {
+                            Circle()
+                                .fill(Theme.Colors.turquoise.opacity(0.2))
+                                .frame(width: 32, height: 32)
+                            Text(String(member.name.prefix(1)))
+                                .font(Theme.Typography.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(Theme.Colors.turquoise)
+                            
+                            if member.isOnline {
+                                Circle()
+                                    .fill(Theme.Colors.connected)
+                                    .frame(width: 10, height: 10)
+                                    .overlay(Circle().stroke(Theme.Colors.backgroundDark, lineWidth: 2))
+                                    .offset(x: 10, y: 10)
+                            }
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(member.name)
+                                .font(Theme.Typography.callout)
+                                .fontWeight(.semibold)
+                                .foregroundColor(Theme.Colors.robotCream)
+                            Text("Tap for profile")
+                                .font(.system(size: 10))
+                                .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                        }
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10))
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+                    }
+                }
+            }
+        }
     }
     
     private func sendMessage() {
