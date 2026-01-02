@@ -98,7 +98,7 @@ class MeshtasticManager: NSObject, ObservableObject {
     override init() {
         super.init()
         loadPersistedData()
-        setupBluetooth()
+        // Don't setup Bluetooth here - do it lazily to avoid blocking main thread
         
         // Load demo data if no real members exist (for testing without device)
         if campMembers.isEmpty {
@@ -175,6 +175,7 @@ class MeshtasticManager: NSObject, ObservableObject {
     
     // MARK: - Bluetooth Setup
     private func setupBluetooth() {
+        guard centralManager == nil else { return }
         centralManager = CBCentralManager(delegate: self, queue: nil, options: [
             CBCentralManagerOptionShowPowerAlertKey: true
         ])
@@ -184,6 +185,9 @@ class MeshtasticManager: NSObject, ObservableObject {
     
     /// Start scanning for Meshtastic devices
     func startScanning() {
+        // Lazy initialization of Bluetooth
+        setupBluetooth()
+        
         guard centralManager?.state == .poweredOn else {
             connectionStatus = .bluetoothOff
             lastError = "Bluetooth is not available"
