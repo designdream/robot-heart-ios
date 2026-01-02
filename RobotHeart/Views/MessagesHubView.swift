@@ -15,11 +15,11 @@ struct MessagesHubView: View {
                 Theme.Colors.backgroundDark.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Section picker
+                    // Section picker - just Global and Direct now
+                    // Announcements moved to Home where they belong
                     Picker("Section", selection: $selectedSection) {
                         Text("Global").tag(0)
                         Text("Direct").tag(1)
-                        Text("Announcements").tag(2)
                     }
                     .pickerStyle(.segmented)
                     .padding()
@@ -33,10 +33,6 @@ struct MessagesHubView: View {
                         // Direct Messages - 1:1 conversations
                         DirectMessagesListView()
                             .tag(1)
-                        
-                        // Announcements - official camp announcements
-                        AnnouncementsTabView()
-                            .tag(2)
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
                 }

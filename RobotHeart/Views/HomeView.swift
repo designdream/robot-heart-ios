@@ -24,10 +24,8 @@ struct HomeView: View {
                         // HOME = "What's happening NOW that needs my attention?"
                         // Glanceable dashboard - look once, put phone away
                         
-                        // PRIORITY 1: Urgent announcements (action needed)
-                        if !announcementManager.announcements.isEmpty {
-                            RecentAnnouncementsCard()
-                        }
+                        // PRIORITY 1: Announcements - always visible, admin can add
+                        AnnouncementsSection()
                         
                         // PRIORITY 2: Next commitment with time-to-leave
                         // (Where do I need to be?)
@@ -1243,7 +1241,102 @@ struct QuickActionTile: View {
     }
 }
 
-// MARK: - Recent Announcements Card
+// MARK: - Announcements Section (Home)
+/// Always visible on Home, with add button for admins
+struct AnnouncementsSection: View {
+    @EnvironmentObject var announcementManager: AnnouncementManager
+    @EnvironmentObject var shiftManager: ShiftManager
+    @State private var showingCreateAnnouncement = false
+    
+    var hasUrgent: Bool {
+        announcementManager.announcements.contains { $0.priority == .urgent }
+    }
+    
+    var hasImportant: Bool {
+        announcementManager.announcements.contains { $0.priority == .important }
+    }
+    
+    var iconColor: Color {
+        if hasUrgent { return Theme.Colors.emergency }
+        if hasImportant { return Theme.Colors.warning }
+        return Theme.Colors.goldenYellow
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            // Header with add button
+            HStack {
+                Image(systemName: "megaphone.fill")
+                    .foregroundColor(iconColor)
+                
+                Text("Announcements")
+                    .font(Theme.Typography.headline)
+                    .foregroundColor(Theme.Colors.robotCream)
+                
+                Spacer()
+                
+                if announcementManager.unreadCount > 0 {
+                    Text("\(announcementManager.unreadCount) new")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.backgroundDark)
+                        .padding(.horizontal, Theme.Spacing.sm)
+                        .padding(.vertical, 2)
+                        .background(hasUrgent ? Theme.Colors.emergency : Theme.Colors.sunsetOrange)
+                        .cornerRadius(Theme.CornerRadius.full)
+                }
+                
+                // Admin add button
+                if shiftManager.isAdmin {
+                    Button(action: { showingCreateAnnouncement = true }) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                            .foregroundColor(Theme.Colors.sunsetOrange)
+                    }
+                }
+                
+                NavigationLink(destination: AnnouncementsListView()) {
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+                }
+            }
+            
+            // Announcements list or empty state
+            if announcementManager.announcements.isEmpty {
+                HStack {
+                    Spacer()
+                    VStack(spacing: Theme.Spacing.sm) {
+                        Image(systemName: "checkmark.circle")
+                            .font(.title)
+                            .foregroundColor(Theme.Colors.connected)
+                        Text("No announcements")
+                            .font(Theme.Typography.caption)
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    }
+                    .padding(.vertical, Theme.Spacing.md)
+                    Spacer()
+                }
+            } else {
+                ForEach(announcementManager.announcements.prefix(3)) { announcement in
+                    NavigationLink(destination: AnnouncementsListView()) {
+                        AnnouncementRow(announcement: announcement)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.md)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
+                .stroke(hasUrgent ? Theme.Colors.emergency : (hasImportant ? Theme.Colors.warning : Color.clear), lineWidth: 2)
+        )
+        .sheet(isPresented: $showingCreateAnnouncement) {
+            CreateAnnouncementView()
+        }
+    }
+}
+
+// MARK: - Recent Announcements Card (Legacy - kept for compatibility)
 struct RecentAnnouncementsCard: View {
     @EnvironmentObject var announcementManager: AnnouncementManager
     

@@ -16,6 +16,9 @@ struct ContentView: View {
     @State private var messagesNavID = UUID()
     @State private var meNavID = UUID()
     
+    // Deep link to DM with specific member
+    @State private var dmMemberID: String?
+    
     // MARK: - Badge Logic
     // Badges should only show when ACTION is needed - minimize phone usage
     // "Put down the phone" philosophy - only interrupt for important things
@@ -98,6 +101,11 @@ struct ContentView: View {
         .onAppear {
             setupTabBarAppearance()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openDirectMessage)) { notification in
+            if let memberID = notification.object as? String {
+                openDMWithMember(memberID)
+            }
+        }
     }
     
     // MARK: - Tab Selection with Double-Tap to Pop to Root
@@ -136,6 +144,18 @@ struct ContentView: View {
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
     }
+    
+    /// Navigate to Messages tab and open DM with specific member
+    func openDMWithMember(_ memberID: String) {
+        dmMemberID = memberID
+        selectedTab = 3 // Messages tab
+        messagesNavID = UUID() // Reset to show DM
+    }
+}
+
+// MARK: - Notification for opening DM
+extension Notification.Name {
+    static let openDirectMessage = Notification.Name("openDirectMessage")
 }
 
 #Preview {

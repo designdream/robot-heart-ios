@@ -384,9 +384,15 @@ struct CommunityMemberCard: View {
             
             Spacer()
             
-            // Quick actions
+            // Quick actions - message button switches to Messages tab with DM
             if member.isOnline {
-                Button(action: {}) {
+                Button(action: {
+                    // Post notification to switch to Messages tab with this member
+                    NotificationCenter.default.post(
+                        name: .openDirectMessage,
+                        object: member.id
+                    )
+                }) {
                     Image(systemName: "message.fill")
                         .font(.system(size: 16))
                         .foregroundColor(Theme.Colors.turquoise)
