@@ -7,6 +7,7 @@ struct ShiftsView: View {
     @EnvironmentObject var draftManager: DraftManager
     @EnvironmentObject var taskManager: TaskManager
     @State private var showingAdminView = false
+    @State private var showingDraftHub = false
     @State private var showingAddTask = false
     @State private var showingOpportunities = false
     @State private var showingCampMap = false
@@ -64,10 +65,18 @@ struct ShiftsView: View {
                         .foregroundColor(Theme.Colors.robotCream)
                 }
                 
-                // Admin only - for creating/managing shifts
-                if shiftManager.isAdmin {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: { showingAdminView = true }) {
+                // Admin menu - for managing shifts and drafts
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if shiftManager.isAdmin {
+                        Menu {
+                            Button(action: { showingAdminView = true }) {
+                                Label("Manage Shifts", systemImage: "calendar.badge.plus")
+                            }
+                            
+                            Button(action: { showingDraftHub = true }) {
+                                Label("Manage Drafts", systemImage: "sportscourt")
+                            }
+                        } label: {
                             Image(systemName: "gearshape.fill")
                                 .foregroundColor(Theme.Colors.goldenYellow)
                         }
@@ -76,6 +85,12 @@ struct ShiftsView: View {
             }
             .sheet(isPresented: $showingAdminView) {
                 ShiftAdminView()
+                    .environmentObject(shiftManager)
+                    .environmentObject(meshtasticManager)
+            }
+            .sheet(isPresented: $showingDraftHub) {
+                DraftHubView()
+                    .environmentObject(draftManager)
                     .environmentObject(shiftManager)
                     .environmentObject(meshtasticManager)
             }
