@@ -402,7 +402,7 @@ struct GlobalSearchView: View {
     
     private var searchResultsView: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-            // People results
+            // People results - link to member detail
             if selectedCategory == .all || selectedCategory == .people {
                 let peopleResults = meshtasticManager.campMembers.filter {
                     $0.name.localizedCaseInsensitiveContains(searchText)
@@ -410,45 +410,51 @@ struct GlobalSearchView: View {
                 if !peopleResults.isEmpty {
                     SearchResultSection(title: "People", count: peopleResults.count) {
                         ForEach(peopleResults) { member in
-                            SearchResultRow(
-                                icon: "person.fill",
-                                title: member.name,
-                                subtitle: member.role.rawValue,
-                                color: Theme.Colors.turquoise
-                            )
+                            NavigationLink(destination: CommunityMemberDetailView(member: member)) {
+                                SearchResultRow(
+                                    icon: "person.fill",
+                                    title: member.name,
+                                    subtitle: member.role.rawValue,
+                                    color: Theme.Colors.turquoise
+                                )
+                            }
                         }
                     }
                 }
             }
             
-            // Map items results (from our camp layout - privacy respected)
+            // Map items results - link to Places/Map
             if selectedCategory == .all || selectedCategory == .map {
                 let mapItemResults = mapSearchResults
                 if !mapItemResults.isEmpty {
                     SearchResultSection(title: "Map Items", count: mapItemResults.count) {
                         ForEach(mapItemResults) { item in
-                            MapSearchResultRow(item: item)
+                            NavigationLink(destination: CampBrowserView()) {
+                                MapSearchResultRow(item: item)
+                            }
                         }
                     }
                 }
                 
-                // Members with shared locations (only from our camp)
+                // Members with shared locations - link to member detail
                 let locationResults = membersWithLocations
                 if !locationResults.isEmpty {
                     SearchResultSection(title: "Member Locations", count: locationResults.count) {
                         ForEach(locationResults) { member in
-                            SearchResultRow(
-                                icon: "mappin.circle.fill",
-                                title: member.name,
-                                subtitle: member.lastKnownLocation ?? "Location shared",
-                                color: Theme.Colors.turquoise
-                            )
+                            NavigationLink(destination: CommunityMemberDetailView(member: member)) {
+                                SearchResultRow(
+                                    icon: "mappin.circle.fill",
+                                    title: member.name,
+                                    subtitle: member.lastKnownLocation ?? "Location shared",
+                                    color: Theme.Colors.turquoise
+                                )
+                            }
                         }
                     }
                 }
             }
             
-            // Tasks results
+            // Tasks results - link to task detail
             if selectedCategory == .all || selectedCategory == .tasks {
                 let taskResults = taskManager.tasks.filter {
                     $0.title.localizedCaseInsensitiveContains(searchText)
@@ -456,18 +462,20 @@ struct GlobalSearchView: View {
                 if !taskResults.isEmpty {
                     SearchResultSection(title: "Tasks", count: taskResults.count) {
                         ForEach(taskResults) { task in
-                            SearchResultRow(
-                                icon: "checkmark.circle",
-                                title: task.title,
-                                subtitle: task.priority.shortLabel,
-                                color: Theme.Colors.sunsetOrange
-                            )
+                            NavigationLink(destination: TaskDetailView(task: task)) {
+                                SearchResultRow(
+                                    icon: "checkmark.circle",
+                                    title: task.title,
+                                    subtitle: task.priority.shortLabel,
+                                    color: Theme.Colors.sunsetOrange
+                                )
+                            }
                         }
                     }
                 }
             }
             
-            // Events results
+            // Events results - link to event detail
             if selectedCategory == .all || selectedCategory == .events {
                 let eventResults = socialManager.playaEvents.filter {
                     $0.title.localizedCaseInsensitiveContains(searchText)
@@ -475,30 +483,34 @@ struct GlobalSearchView: View {
                 if !eventResults.isEmpty {
                     SearchResultSection(title: "Events", count: eventResults.count) {
                         ForEach(eventResults) { event in
-                            SearchResultRow(
-                                icon: "calendar",
-                                title: event.title,
-                                subtitle: event.location.displayText,
-                                color: Theme.Colors.goldenYellow
-                            )
+                            NavigationLink(destination: PlayaEventsView()) {
+                                SearchResultRow(
+                                    icon: "calendar",
+                                    title: event.title,
+                                    subtitle: event.location.displayText,
+                                    color: Theme.Colors.goldenYellow
+                                )
+                            }
                         }
                     }
                 }
             }
             
-            // Camps results (discovered camps via mesh)
+            // Camps results - link to Places view
             if selectedCategory == .all || selectedCategory == .camps {
                 let campResults = campSearchResults
                 if !campResults.isEmpty {
                     SearchResultSection(title: "Camps", count: campResults.count) {
                         ForEach(campResults) { camp in
-                            CampSearchResultRow(camp: camp, isOurCamp: camp.id == campNetworkManager.myCamp?.id.uuidString)
+                            NavigationLink(destination: PlacesView()) {
+                                CampSearchResultRow(camp: camp, isOurCamp: camp.id == campNetworkManager.myCamp?.id.uuidString)
+                            }
                         }
                     }
                 }
             }
             
-            // Survival Guide results
+            // Survival Guide results - link to Knowledge Base
             if selectedCategory == .all || selectedCategory == .guide {
                 let guideResults = guideSearchResults
                 if !guideResults.isEmpty {
