@@ -10,6 +10,7 @@
 | Task | Status | Notes | Added |
 |------|--------|-------|-------|
 | Test Meshtastic with real T1000-E device | `pending` | Device arriving this week | 2026-01-01 |
+| Refactor architecture (Phase 1) | `done` | AppEnvironment + NetworkOrchestrator | 2026-01-02 |
 
 ---
 
@@ -17,7 +18,7 @@
 
 | Task | Status | Notes | Added |
 |------|--------|-------|-------|
-| Fix Sunset Orange color to match Style Guide | `pending` | Should be #FF6B35, currently #D84315 | 2026-01-01 |
+| Fix Sunset Orange color to match Style Guide | `done` | Changed to #FF6B35 in Theme.swift | 2026-01-01 |
 | Remove extra colors not in Style Guide | `pending` | Simplify to 8 official colors | 2026-01-01 |
 | Implement AVFoundation QR scanner | `pending` | Currently placeholder | 2026-01-01 |
 | Add SwiftProtobuf for full protobuf parsing | `pending` | Current implementation is simplified | 2026-01-01 |
@@ -67,6 +68,15 @@
 ---
 
 ## 📋 Session Notes
+
+### 2026-01-02 Session
+- **Phase 1 Architectural Refactoring Complete**
+- Created `AppEnvironment` for centralized dependency injection (replaces 22 individual managers)
+- Created `NetworkOrchestrator` to manage Meshtastic + BLE coexistence and prevent conflicts
+- Fixed Sunset Orange color to match style guide (#FF6B35)
+- Created comprehensive refactoring guide (`docs/REFACTORING_GUIDE.md`)
+- Simplified `RobotHeartApp.swift` significantly
+- Added network health monitoring and intelligent routing
 
 ### 2026-01-01 Session (Evening)
 - Added search functionality to Camp Layout (search by name/person, highlights matches, grays out rest)

@@ -8,7 +8,7 @@ struct Theme {
         static let robotBrown = Color(hex: "3D2817")      // Robot details, subtle accents
         
         // Sunset/Golden Hour Palette
-        static let sunsetOrange = Color(hex: "D84315")    // Primary CTA (Burnt Orange)
+        static let sunsetOrange = Color(hex: "FF6B35")    // Primary CTA (Sunset Orange per style guide)
         static let goldenYellow = Color(hex: "FFB300")    // Secondary accent, warmth
         static let deepRedOrange = Color(hex: "BF360C")   // Dramatic accent
         static let amber = Color(hex: "FF6F00")           // Mid-tone sunset

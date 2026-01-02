@@ -4,36 +4,13 @@ import CoreData
 
 @main
 struct RobotHeartApp: App {
-    // Core Data persistence
-    let persistenceController = PersistenceController.shared
+    // Centralized app environment (replaces 20+ individual managers)
+    @StateObject private var environment = AppEnvironment()
     
-    // Existing managers
-    @StateObject private var meshtasticManager = MeshtasticManager()
-    @StateObject private var locationManager = LocationManager()
-    @StateObject private var shiftManager = ShiftManager()
-    @StateObject private var emergencyManager = EmergencyManager()
-    @StateObject private var announcementManager = AnnouncementManager()
-    @StateObject private var checkInManager = CheckInManager()
-    @StateObject private var economyManager = EconomyManager()
-    @StateObject private var draftManager = DraftManager()
-    @StateObject private var shiftBlockManager = ShiftBlockManager()
-    @StateObject private var profileManager = ProfileManager()
-    @StateObject private var socialManager = SocialManager()
-    @StateObject private var taskManager = TaskManager()
-    @StateObject private var campLayoutManager = CampLayoutManager()
-    @StateObject private var channelManager = ChannelManager()
-    
-    // New offline-first managers
-    @StateObject private var localDataManager = LocalDataManager.shared
-    @StateObject private var bleMeshManager = BLEMeshManager.shared
-    @StateObject private var messageQueueManager = MessageQueueManager.shared
-    @StateObject private var cloudSyncManager = CloudSyncManager.shared
-    @StateObject private var campNetworkManager = CampNetworkManager.shared
-    
-    // Biometric authentication
-    @StateObject private var biometricAuthManager = BiometricAuthManager.shared
+    // Biometric lock state
     @State private var isUnlocked = false
     
+    // Onboarding state
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     init() {
@@ -45,40 +22,18 @@ struct RobotHeartApp: App {
         WindowGroup {
             if !hasCompletedOnboarding {
                 OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
-                    .environmentObject(profileManager)
-                    .environmentObject(biometricAuthManager)
+                    .withAppEnvironment(environment)
                     .preferredColorScheme(.dark)
-            } else if !isUnlocked && biometricAuthManager.isEnabled {
+            } else if !isUnlocked && environment.biometricAuth.isEnabled {
                 BiometricLockView(isUnlocked: $isUnlocked)
-                    .environmentObject(biometricAuthManager)
+                    .environmentObject(environment.biometricAuth)
                     .preferredColorScheme(.dark)
             } else {
                 MainAppView()
-                    .environment(\.managedObjectContext, persistenceController.viewContext)
-                    .environmentObject(meshtasticManager)
-                    .environmentObject(locationManager)
-                    .environmentObject(shiftManager)
-                    .environmentObject(emergencyManager)
-                    .environmentObject(announcementManager)
-                    .environmentObject(checkInManager)
-                    .environmentObject(economyManager)
-                    .environmentObject(draftManager)
-                    .environmentObject(shiftBlockManager)
-                    .environmentObject(profileManager)
-                    .environmentObject(socialManager)
-                    .environmentObject(taskManager)
-                    .environmentObject(campLayoutManager)
-                    .environmentObject(channelManager)
-                    .environmentObject(localDataManager)
-                    .environmentObject(bleMeshManager)
-                    .environmentObject(messageQueueManager)
-                    .environmentObject(cloudSyncManager)
-                    .environmentObject(campNetworkManager)
-                    .environmentObject(biometricAuthManager)
+                    .withAppEnvironment(environment)
                     .preferredColorScheme(.dark)
                     .onAppear {
-                        shiftManager.requestNotificationPermissions()
-                        startOfflineServices()
+                        environment.startServices()
                     }
             }
         }
@@ -93,16 +48,26 @@ struct RobotHeartApp: App {
         switch newPhase {
         case .background:
             // Lock app when going to background
-            if biometricAuthManager.isEnabled {
+            if environment.biometricAuth.isEnabled {
                 isUnlocked = false
             }
+            // Stop services to save battery
+            environment.stopServices()
+            
         case .active:
             // Check if we need to re-authenticate
-            if biometricAuthManager.needsReauthentication {
+            if environment.biometricAuth.needsReauthentication {
                 isUnlocked = false
             }
+            // Resume services
+            if hasCompletedOnboarding && isUnlocked {
+                environment.resumeServices()
+            }
+            
         case .inactive:
-            break
+            // Pause services
+            environment.pauseServices()
+            
         @unknown default:
             break
         }
@@ -156,33 +121,5 @@ struct RobotHeartApp: App {
             checkInCategory,
             announcementCategory
         ])
-    }
-    
-    private func startOfflineServices() {
-        // Start BLE mesh networking
-        let userID = UserDefaults.standard.string(forKey: "userID") ?? UUID().uuidString
-        let userName = profileManager.myProfile.displayName
-        
-        // Save user ID if not set
-        if UserDefaults.standard.string(forKey: "userID") == nil {
-            UserDefaults.standard.set(userID, forKey: "userID")
-        }
-        UserDefaults.standard.set(userName, forKey: "userName")
-        
-        // Start BLE advertising and scanning
-        bleMeshManager.startAdvertising(userID: userID, userName: userName)
-        bleMeshManager.startScanning()
-        
-        // Start camp network discovery
-        campNetworkManager.startDiscovery()
-        
-        // Setup gateway node relay if online
-        if cloudSyncManager.isGatewayNode {
-            cloudSyncManager.relayFromCloud()
-        }
-        
-        // Cleanup old data
-        localDataManager.cleanupExpiredMessages()
-        localDataManager.cleanupOldSyncItems()
     }
 }
