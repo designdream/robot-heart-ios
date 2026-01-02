@@ -280,9 +280,16 @@ struct UnifiedPeopleView: View {
             ))
         }
         
-        // Apply search filter
+        // Apply search filter - search by name, role, and ID
         if !searchText.isEmpty {
-            entries = entries.filter { $0.member.name.localizedCaseInsensitiveContains(searchText) }
+            entries = entries.filter { entry in
+                // Search by display name
+                entry.member.name.localizedCaseInsensitiveContains(searchText) ||
+                // Search by role
+                entry.member.role.rawValue.localizedCaseInsensitiveContains(searchText) ||
+                // Search by node ID (for tech-savvy users)
+                entry.member.id.localizedCaseInsensitiveContains(searchText)
+            }
         }
         
         // Sort: unread first, then by last message time, then online, then name
