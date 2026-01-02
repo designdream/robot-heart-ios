@@ -181,6 +181,22 @@ class ChannelManager: ObservableObject {
         saveChannels()
     }
     
+    // MARK: - Direct Message Helpers (for unified people view)
+    
+    /// Get the last direct message with a specific person
+    func lastDirectMessage(with memberID: String) -> ChannelMessage? {
+        // For now, return nil - DMs are handled by MeshtasticManager
+        // This is a placeholder for future DM integration
+        return nil
+    }
+    
+    /// Get unread direct message count with a specific person
+    func unreadDirectMessageCount(with memberID: String) -> Int {
+        // For now, return 0 - DMs are handled by MeshtasticManager
+        // This is a placeholder for future DM integration
+        return 0
+    }
+    
     // MARK: - Persistence
     
     private func saveChannels() {

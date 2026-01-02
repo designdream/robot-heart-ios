@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Community Hub View
 /// THE CORE of the Burning Man experience: Human Connection + Communication
-/// Unified hub for People, Channels (#topics), and Direct Messages
+/// People first (the main point), then Channels for group topics
 struct CommunityHubView: View {
     @EnvironmentObject var meshtasticManager: MeshtasticManager
     @EnvironmentObject var profileManager: ProfileManager
@@ -10,64 +10,11 @@ struct CommunityHubView: View {
     @EnvironmentObject var locationManager: LocationManager
     @EnvironmentObject var channelManager: ChannelManager
     @State private var searchText = ""
-    @State private var selectedSection: CommunitySection = .channels
-    @State private var selectedPeopleFilter: PeopleFilter = .connections
+    @State private var selectedSection: CommunitySection = .people // People first!
     
     enum CommunitySection: String, CaseIterable {
-        case channels = "Channels"
         case people = "People"
-        case dms = "DMs"
-        
-        var icon: String {
-            switch self {
-            case .channels: return "number"
-            case .people: return "person.3"
-            case .dms: return "bubble.left.and.bubble.right"
-            }
-        }
-    }
-    
-    enum PeopleFilter: String, CaseIterable {
-        case connections = "My Connections"
-        case all = "All"
-        case online = "Online Now"
-        
-        var icon: String {
-            switch self {
-            case .connections: return "heart"
-            case .all: return "person.3"
-            case .online: return "wifi"
-            }
-        }
-    }
-    
-    var filteredMembers: [CampMember] {
-        var members = meshtasticManager.campMembers
-        
-        // Apply filter
-        switch selectedPeopleFilter {
-        case .all:
-            break
-        case .online:
-            members = members.filter { $0.isOnline }
-        case .connections:
-            members = members.filter { profileManager.approvedContacts.contains($0.id) }
-        }
-        
-        // Apply search
-        if !searchText.isEmpty {
-            members = members.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-        }
-        
-        // Sort: online first, then by name
-        return members.sorted { 
-            if $0.isOnline != $1.isOnline { return $0.isOnline }
-            return $0.name < $1.name
-        }
-    }
-    
-    var onlineCount: Int {
-        meshtasticManager.campMembers.filter { $0.isOnline }.count
+        case channels = "Channels"
     }
     
     var body: some View {
@@ -76,11 +23,10 @@ struct CommunityHubView: View {
                 Theme.Colors.backgroundDark.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Simple text-only picker - no icons
+                    // Simple picker - People first
                     Picker("Section", selection: $selectedSection) {
-                        Text("Channels").tag(CommunitySection.channels)
                         Text("People").tag(CommunitySection.people)
-                        Text("DMs").tag(CommunitySection.dms)
+                        Text("Channels").tag(CommunitySection.channels)
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal)
@@ -88,17 +34,10 @@ struct CommunityHubView: View {
                     
                     // Content based on section
                     switch selectedSection {
+                    case .people:
+                        UnifiedPeopleView(searchText: $searchText)
                     case .channels:
                         ChannelsListView(searchText: $searchText)
-                    case .people:
-                        PeopleListView(
-                            searchText: $searchText,
-                            selectedFilter: $selectedPeopleFilter,
-                            filteredMembers: filteredMembers,
-                            onlineCount: onlineCount
-                        )
-                    case .dms:
-                        DirectMessagesListView()
                     }
                 }
             }
@@ -110,14 +49,6 @@ struct CommunityHubView: View {
                         .foregroundColor(Theme.Colors.robotCream)
                 }
             }
-        }
-    }
-    
-    func countForFilter(_ filter: PeopleFilter) -> Int? {
-        switch filter {
-        case .all: return nil
-        case .online: return onlineCount
-        case .connections: return profileManager.approvedContacts.count
         }
     }
 }
@@ -320,26 +251,81 @@ struct ChannelJoinRow: View {
     }
 }
 
-// MARK: - People List View
-/// Simplified - just search and list, no redundant stats/filters
-struct PeopleListView: View {
+// MARK: - Unified People View
+/// Merges People + DMs into one unified list
+/// Shows all people (camp + QR connections), sorted by recent messages
+/// Unread indicators, connection type badges
+struct UnifiedPeopleView: View {
     @EnvironmentObject var meshtasticManager: MeshtasticManager
     @EnvironmentObject var profileManager: ProfileManager
+    @EnvironmentObject var channelManager: ChannelManager
     @Binding var searchText: String
-    @Binding var selectedFilter: CommunityHubView.PeopleFilter
-    let filteredMembers: [CampMember]
-    let onlineCount: Int
+    
+    // All people: camp members + QR connections, deduplicated
+    var allPeople: [PersonEntry] {
+        var entries: [PersonEntry] = []
+        
+        // Add all camp members
+        for member in meshtasticManager.campMembers {
+            let isConnection = profileManager.approvedContacts.contains(member.id)
+            let lastMessage = channelManager.lastDirectMessage(with: member.id)
+            let unreadCount = channelManager.unreadDirectMessageCount(with: member.id)
+            
+            entries.append(PersonEntry(
+                member: member,
+                connectionType: isConnection ? .qrConnection : .campMember,
+                lastMessageTime: lastMessage?.timestamp,
+                lastMessagePreview: lastMessage?.content,
+                unreadCount: unreadCount
+            ))
+        }
+        
+        // Apply search filter
+        if !searchText.isEmpty {
+            entries = entries.filter { $0.member.name.localizedCaseInsensitiveContains(searchText) }
+        }
+        
+        // Sort: unread first, then by last message time, then online, then name
+        return entries.sorted { a, b in
+            // Unread messages first
+            if a.unreadCount > 0 && b.unreadCount == 0 { return true }
+            if b.unreadCount > 0 && a.unreadCount == 0 { return false }
+            
+            // Then by last message time (most recent first)
+            if let aTime = a.lastMessageTime, let bTime = b.lastMessageTime {
+                return aTime > bTime
+            }
+            if a.lastMessageTime != nil && b.lastMessageTime == nil { return true }
+            if b.lastMessageTime != nil && a.lastMessageTime == nil { return false }
+            
+            // Then online status
+            if a.member.isOnline != b.member.isOnline { return a.member.isOnline }
+            
+            // Finally alphabetical
+            return a.member.name < b.member.name
+        }
+    }
+    
+    var onlineCount: Int {
+        meshtasticManager.campMembers.filter { $0.isOnline }.count
+    }
+    
+    var totalUnread: Int {
+        allPeople.reduce(0) { $0 + $1.unreadCount }
+    }
     
     var body: some View {
         VStack(spacing: 0) {
-            // Search bar only
+            // Search bar with stats
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
                 TextField("Find someone...", text: $searchText)
                     .foregroundColor(Theme.Colors.robotCream)
                 
-                // Inline online count
+                Spacer()
+                
+                // Online count
                 if onlineCount > 0 {
                     HStack(spacing: 4) {
                         Circle()
@@ -354,23 +340,15 @@ struct PeopleListView: View {
             .padding()
             .background(Theme.Colors.backgroundLight)
             
-            // Members list - straight to content
+            // People list
             ScrollView {
                 LazyVStack(spacing: Theme.Spacing.sm) {
-                    if filteredMembers.isEmpty {
-                        VStack(spacing: Theme.Spacing.md) {
-                            Image(systemName: "person.slash")
-                                .font(.system(size: 48))
-                                .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
-                            Text("No one found")
-                                .font(Theme.Typography.headline)
-                                .foregroundColor(Theme.Colors.robotCream)
-                        }
-                        .padding(.top, 60)
+                    if allPeople.isEmpty {
+                        EmptyPeopleView()
                     } else {
-                        ForEach(filteredMembers) { member in
-                            NavigationLink(destination: CommunityMemberDetailView(member: member)) {
-                                CommunityMemberCard(member: member)
+                        ForEach(allPeople) { entry in
+                            NavigationLink(destination: DirectMessageView(member: entry.member)) {
+                                UnifiedPersonRow(entry: entry)
                             }
                         }
                     }
@@ -381,27 +359,153 @@ struct PeopleListView: View {
     }
 }
 
-// MARK: - People Filter Chip
-struct PeopleFilterChip: View {
-    let title: String
-    let icon: String
-    let isSelected: Bool
-    let action: () -> Void
+// MARK: - Person Entry (for unified list)
+struct PersonEntry: Identifiable {
+    let member: CampMember
+    let connectionType: ConnectionType
+    let lastMessageTime: Date?
+    let lastMessagePreview: String?
+    let unreadCount: Int
+    
+    var id: String { member.id }
+    
+    enum ConnectionType {
+        case campMember      // From camp roster
+        case qrConnection    // Connected via QR exchange
+    }
+}
+
+// MARK: - Unified Person Row
+struct UnifiedPersonRow: View {
+    let entry: PersonEntry
+    
+    var connectionBadge: (icon: String, color: Color) {
+        switch entry.connectionType {
+        case .campMember:
+            return ("tent.fill", Theme.Colors.goldenYellow)
+        case .qrConnection:
+            return ("qrcode", Theme.Colors.turquoise)
+        }
+    }
     
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 12))
-                Text(title)
-                    .font(Theme.Typography.caption)
+        HStack(spacing: Theme.Spacing.md) {
+            // Avatar with online indicator
+            ZStack {
+                Circle()
+                    .fill(entry.unreadCount > 0 ? Theme.Colors.sunsetOrange.opacity(0.2) : Theme.Colors.backgroundLight)
+                    .frame(width: 50, height: 50)
+                
+                Text(String(entry.member.name.prefix(1)))
+                    .font(Theme.Typography.headline)
+                    .foregroundColor(entry.unreadCount > 0 ? Theme.Colors.sunsetOrange : Theme.Colors.robotCream)
+                
+                // Online indicator
+                if entry.member.isOnline {
+                    Circle()
+                        .fill(Theme.Colors.connected)
+                        .frame(width: 14, height: 14)
+                        .overlay(
+                            Circle()
+                                .stroke(Theme.Colors.backgroundDark, lineWidth: 2)
+                        )
+                        .offset(x: 16, y: 16)
+                }
             }
-            .foregroundColor(isSelected ? Theme.Colors.backgroundDark : Theme.Colors.robotCream)
-            .padding(.horizontal, Theme.Spacing.md)
-            .padding(.vertical, Theme.Spacing.xs)
-            .background(isSelected ? Theme.Colors.turquoise : Theme.Colors.backgroundLight)
-            .cornerRadius(Theme.CornerRadius.full)
+            
+            // Name and preview
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(entry.member.name)
+                        .font(Theme.Typography.callout)
+                        .fontWeight(entry.unreadCount > 0 ? .bold : .medium)
+                        .foregroundColor(Theme.Colors.robotCream)
+                    
+                    // Connection type badge
+                    Image(systemName: connectionBadge.icon)
+                        .font(.system(size: 10))
+                        .foregroundColor(connectionBadge.color)
+                }
+                
+                // Last message preview or status
+                if let preview = entry.lastMessagePreview {
+                    Text(preview)
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(entry.unreadCount > 0 ? Theme.Colors.robotCream : Theme.Colors.robotCream.opacity(0.5))
+                        .lineLimit(1)
+                } else {
+                    Text(entry.member.isOnline ? "Online now" : "Tap to message")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                }
+            }
+            
+            Spacer()
+            
+            // Unread badge or time
+            if entry.unreadCount > 0 {
+                Text("\(entry.unreadCount)")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Theme.Colors.sunsetOrange)
+                    .cornerRadius(Theme.CornerRadius.full)
+            } else if let time = entry.lastMessageTime {
+                Text(timeAgo(time))
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.4))
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+            }
         }
+        .padding(Theme.Spacing.md)
+        .background(entry.unreadCount > 0 ? Theme.Colors.sunsetOrange.opacity(0.1) : Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.md)
+    }
+    
+    private func timeAgo(_ date: Date) -> String {
+        let interval = Date().timeIntervalSince(date)
+        if interval < 60 { return "now" }
+        if interval < 3600 { return "\(Int(interval / 60))m" }
+        if interval < 86400 { return "\(Int(interval / 3600))h" }
+        return "\(Int(interval / 86400))d"
+    }
+}
+
+// MARK: - Empty People View
+struct EmptyPeopleView: View {
+    var body: some View {
+        VStack(spacing: Theme.Spacing.lg) {
+            Image(systemName: "person.2.fill")
+                .font(.system(size: 48))
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+            
+            Text("No people yet")
+                .font(Theme.Typography.headline)
+                .foregroundColor(Theme.Colors.robotCream)
+            
+            Text("Connect with camp members or scan QR codes to add people")
+                .font(Theme.Typography.body)
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                .multilineTextAlignment(.center)
+            
+            NavigationLink(destination: QRContactExchangeView()) {
+                HStack {
+                    Image(systemName: "qrcode.viewfinder")
+                    Text("Scan QR Code")
+                }
+                .font(Theme.Typography.callout)
+                .fontWeight(.semibold)
+                .foregroundColor(Theme.Colors.backgroundDark)
+                .padding()
+                .background(Theme.Colors.turquoise)
+                .cornerRadius(Theme.CornerRadius.md)
+            }
+        }
+        .padding(Theme.Spacing.xl)
     }
 }
 
@@ -928,7 +1032,6 @@ struct EmptyConnectionsPrompt: View {
 // MARK: - Empty Search Result
 struct EmptySearchResult: View {
     let searchText: String
-    let filter: CommunityHubView.PeopleFilter
     
     var body: some View {
         VStack(spacing: Theme.Spacing.md) {
@@ -941,7 +1044,7 @@ struct EmptySearchResult: View {
                     .font(Theme.Typography.body)
                     .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
             } else {
-                Text("No one \(filter.rawValue.lowercased()) right now")
+                Text("No one found")
                     .font(Theme.Typography.body)
                     .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
             }
