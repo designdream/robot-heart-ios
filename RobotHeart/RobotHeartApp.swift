@@ -21,6 +21,7 @@ struct RobotHeartApp: App {
     @StateObject private var socialManager = SocialManager()
     @StateObject private var taskManager = TaskManager()
     @StateObject private var campLayoutManager = CampLayoutManager()
+    @StateObject private var channelManager = ChannelManager()
     
     // New offline-first managers
     @StateObject private var localDataManager = LocalDataManager.shared
@@ -67,6 +68,7 @@ struct RobotHeartApp: App {
                     .environmentObject(socialManager)
                     .environmentObject(taskManager)
                     .environmentObject(campLayoutManager)
+                    .environmentObject(channelManager)
                     .environmentObject(localDataManager)
                     .environmentObject(bleMeshManager)
                     .environmentObject(messageQueueManager)

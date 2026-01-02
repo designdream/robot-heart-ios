@@ -1,42 +1,42 @@
 import SwiftUI
 
 // MARK: - Community Hub View
-/// THE CORE of the Burning Man experience: Human Connection
-/// Research shows this is the #1 reason people participate in Burning Man
-/// "Real connection with humans... relating to people face to face, eye contact, hugs"
+/// THE CORE of the Burning Man experience: Human Connection + Communication
+/// Unified hub for People, Channels (#topics), and Direct Messages
 struct CommunityHubView: View {
     @EnvironmentObject var meshtasticManager: MeshtasticManager
     @EnvironmentObject var profileManager: ProfileManager
     @EnvironmentObject var socialManager: SocialManager
     @EnvironmentObject var locationManager: LocationManager
+    @EnvironmentObject var channelManager: ChannelManager
     @State private var searchText = ""
-    @State private var selectedFilter: CommunityFilter = .connections
-    @State private var viewMode: ViewMode = .list
+    @State private var selectedSection: CommunitySection = .channels
+    @State private var selectedPeopleFilter: PeopleFilter = .connections
     
-    enum ViewMode: String, CaseIterable {
-        case list = "List"
-        case map = "Map"
+    enum CommunitySection: String, CaseIterable {
+        case channels = "Channels"
+        case people = "People"
+        case dms = "DMs"
         
         var icon: String {
             switch self {
-            case .list: return "list.bullet"
-            case .map: return "map"
+            case .channels: return "number"
+            case .people: return "person.3"
+            case .dms: return "bubble.left.and.bubble.right"
             }
         }
     }
     
-    enum CommunityFilter: String, CaseIterable {
+    enum PeopleFilter: String, CaseIterable {
         case connections = "My Connections"
         case all = "All"
         case online = "Online Now"
-        case nearby = "Nearby"
         
         var icon: String {
             switch self {
             case .connections: return "heart"
             case .all: return "person.3"
             case .online: return "wifi"
-            case .nearby: return "location"
             }
         }
     }
@@ -45,13 +45,10 @@ struct CommunityHubView: View {
         var members = meshtasticManager.campMembers
         
         // Apply filter
-        switch selectedFilter {
+        switch selectedPeopleFilter {
         case .all:
             break
         case .online:
-            members = members.filter { $0.isOnline }
-        case .nearby:
-            // TODO: Filter by GPS proximity
             members = members.filter { $0.isOnline }
         case .connections:
             members = members.filter { profileManager.approvedContacts.contains($0.id) }
@@ -79,94 +76,32 @@ struct CommunityHubView: View {
                 Theme.Colors.backgroundDark.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // View mode toggle (List / Map) - pill style, no background
-                    HStack(spacing: Theme.Spacing.xs) {
-                        ForEach(ViewMode.allCases, id: \.self) { mode in
-                            Button(action: { 
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    viewMode = mode 
-                                }
-                            }) {
-                                HStack(spacing: Theme.Spacing.xs) {
-                                    Image(systemName: mode.icon)
-                                        .font(.system(size: 12))
-                                    Text(mode.rawValue)
-                                        .font(Theme.Typography.caption)
-                                        .fontWeight(.medium)
-                                }
-                                .foregroundColor(viewMode == mode ? Theme.Colors.backgroundDark : Theme.Colors.robotCream.opacity(0.7))
-                                .padding(.horizontal, Theme.Spacing.md)
-                                .padding(.vertical, Theme.Spacing.sm)
-                                .background(viewMode == mode ? Theme.Colors.turquoise : Theme.Colors.backgroundLight)
-                                .cornerRadius(Theme.CornerRadius.full)
+                    // Section picker (Channels / People / DMs)
+                    Picker("Section", selection: $selectedSection) {
+                        ForEach(CommunitySection.allCases, id: \.self) { section in
+                            HStack {
+                                Image(systemName: section.icon)
+                                Text(section.rawValue)
                             }
+                            .tag(section)
                         }
                     }
-                    .padding(.horizontal, Theme.Spacing.md)
-                    .padding(.vertical, Theme.Spacing.sm)
-                    
-                    // Search bar (always visible)
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
-                        
-                        TextField("Find someone...", text: $searchText)
-                            .foregroundColor(Theme.Colors.robotCream)
-                    }
+                    .pickerStyle(.segmented)
                     .padding()
-                    .background(Theme.Colors.backgroundLight)
                     
-                    // Content based on view mode
-                    if viewMode == .list {
-                        // LIST VIEW
-                        // Connection status header
-                        ConnectionStatusHeader(
-                            totalMembers: meshtasticManager.campMembers.count,
-                            onlineCount: onlineCount,
-                            myConnectionsCount: profileManager.approvedContacts.count
+                    // Content based on section
+                    switch selectedSection {
+                    case .channels:
+                        ChannelsListView(searchText: $searchText)
+                    case .people:
+                        PeopleListView(
+                            searchText: $searchText,
+                            selectedFilter: $selectedPeopleFilter,
+                            filteredMembers: filteredMembers,
+                            onlineCount: onlineCount
                         )
-                        
-                        // Filter chips
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: Theme.Spacing.sm) {
-                                ForEach(CommunityFilter.allCases, id: \.self) { filter in
-                                    CommunityFilterChip(
-                                        title: filter.rawValue,
-                                        icon: filter.icon,
-                                        isSelected: selectedFilter == filter,
-                                        count: countForFilter(filter)
-                                    ) {
-                                        selectedFilter = filter
-                                    }
-                                }
-                            }
-                            .padding(.horizontal)
-                            .padding(.vertical, Theme.Spacing.sm)
-                        }
-                        
-                        // Members list
-                        ScrollView {
-                            LazyVStack(spacing: Theme.Spacing.sm) {
-                                if profileManager.approvedContacts.isEmpty && selectedFilter == .connections {
-                                    EmptyConnectionsPrompt()
-                                } else if filteredMembers.isEmpty {
-                                    EmptySearchResult(searchText: searchText, filter: selectedFilter)
-                                } else {
-                                    ForEach(filteredMembers) { member in
-                                        NavigationLink(destination: CommunityMemberDetailView(member: member)) {
-                                            CommunityMemberCard(member: member)
-                                        }
-                                    }
-                                }
-                            }
-                            .padding()
-                        }
-                    } else {
-                        // MAP VIEW - See your community spatially
-                        CommunityMapView(
-                            members: filteredMembers,
-                            searchText: $searchText
-                        )
+                    case .dms:
+                        DirectMessagesListView()
                     }
                 }
             }
@@ -177,18 +112,523 @@ struct CommunityHubView: View {
                         .font(Theme.Typography.title2)
                         .foregroundColor(Theme.Colors.robotCream)
                 }
-                
-                // NOTE: Removed map icon - redundant with List/Map toggle
             }
         }
     }
     
-    func countForFilter(_ filter: CommunityFilter) -> Int? {
+    func countForFilter(_ filter: PeopleFilter) -> Int? {
         switch filter {
         case .all: return nil
         case .online: return onlineCount
-        case .nearby: return nil
         case .connections: return profileManager.approvedContacts.count
+        }
+    }
+}
+
+// MARK: - Channels List View
+struct ChannelsListView: View {
+    @EnvironmentObject var channelManager: ChannelManager
+    @EnvironmentObject var shiftManager: ShiftManager
+    @Binding var searchText: String
+    @State private var showingCreateChannel = false
+    
+    var filteredChannels: [Channel] {
+        if searchText.isEmpty {
+            return channelManager.myChannels
+        }
+        return channelManager.myChannels.filter { 
+            $0.name.localizedCaseInsensitiveContains(searchText) ||
+            $0.description.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Search bar
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                TextField("Search channels...", text: $searchText)
+                    .foregroundColor(Theme.Colors.robotCream)
+            }
+            .padding()
+            .background(Theme.Colors.backgroundLight)
+            
+            ScrollView {
+                LazyVStack(spacing: Theme.Spacing.sm) {
+                    // My Channels
+                    if !filteredChannels.isEmpty {
+                        ForEach(filteredChannels) { channel in
+                            NavigationLink(destination: ChannelChatView(channel: channel)) {
+                                ChannelRow(channel: channel)
+                            }
+                        }
+                    }
+                    
+                    // Browse more channels
+                    if !channelManager.availableChannels.isEmpty {
+                        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                            Text("BROWSE CHANNELS")
+                                .font(Theme.Typography.caption)
+                                .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                                .padding(.top, Theme.Spacing.lg)
+                            
+                            ForEach(channelManager.availableChannels) { channel in
+                                ChannelJoinRow(channel: channel)
+                            }
+                        }
+                    }
+                    
+                    // Create channel (admin)
+                    if shiftManager.isAdmin {
+                        Button(action: { showingCreateChannel = true }) {
+                            HStack {
+                                Image(systemName: "plus.circle.fill")
+                                Text("Create Channel")
+                            }
+                            .font(Theme.Typography.callout)
+                            .foregroundColor(Theme.Colors.sunsetOrange)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Theme.Colors.backgroundLight)
+                            .cornerRadius(Theme.CornerRadius.md)
+                        }
+                        .padding(.top, Theme.Spacing.md)
+                    }
+                }
+                .padding()
+            }
+        }
+        .sheet(isPresented: $showingCreateChannel) {
+            CreateChannelView()
+        }
+    }
+}
+
+// MARK: - Channel Row
+struct ChannelRow: View {
+    let channel: Channel
+    
+    var channelColor: Color {
+        switch channel.color {
+        case "sunsetOrange": return Theme.Colors.sunsetOrange
+        case "goldenYellow": return Theme.Colors.goldenYellow
+        case "turquoise": return Theme.Colors.turquoise
+        case "dustyPink": return Theme.Colors.dustyPink
+        case "emergency": return Theme.Colors.emergency
+        case "connected": return Theme.Colors.connected
+        default: return Theme.Colors.robotCream
+        }
+    }
+    
+    var body: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            // Channel icon
+            Image(systemName: channel.icon)
+                .font(.title3)
+                .foregroundColor(channelColor)
+                .frame(width: 40, height: 40)
+                .background(channelColor.opacity(0.15))
+                .cornerRadius(Theme.CornerRadius.sm)
+            
+            // Channel info
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(channel.displayName)
+                        .font(Theme.Typography.callout)
+                        .fontWeight(.medium)
+                        .foregroundColor(Theme.Colors.robotCream)
+                    
+                    if channel.unreadCount > 0 {
+                        Text("\(channel.unreadCount)")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Theme.Colors.sunsetOrange)
+                            .cornerRadius(Theme.CornerRadius.full)
+                    }
+                }
+                
+                Text(channel.description)
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    .lineLimit(1)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+        }
+        .padding(Theme.Spacing.md)
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.md)
+    }
+}
+
+// MARK: - Channel Join Row
+struct ChannelJoinRow: View {
+    @EnvironmentObject var channelManager: ChannelManager
+    let channel: Channel
+    
+    var channelColor: Color {
+        switch channel.color {
+        case "sunsetOrange": return Theme.Colors.sunsetOrange
+        case "goldenYellow": return Theme.Colors.goldenYellow
+        case "turquoise": return Theme.Colors.turquoise
+        case "dustyPink": return Theme.Colors.dustyPink
+        case "emergency": return Theme.Colors.emergency
+        case "connected": return Theme.Colors.connected
+        default: return Theme.Colors.robotCream
+        }
+    }
+    
+    var body: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            Image(systemName: channel.icon)
+                .font(.title3)
+                .foregroundColor(channelColor.opacity(0.6))
+                .frame(width: 40, height: 40)
+                .background(Theme.Colors.backgroundLight)
+                .cornerRadius(Theme.CornerRadius.sm)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(channel.displayName)
+                    .font(Theme.Typography.callout)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                Text(channel.description)
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.4))
+                    .lineLimit(1)
+            }
+            
+            Spacer()
+            
+            Button(action: { channelManager.joinChannel(channel.id) }) {
+                Text("Join")
+                    .font(Theme.Typography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.turquoise)
+                    .padding(.horizontal, Theme.Spacing.md)
+                    .padding(.vertical, Theme.Spacing.xs)
+                    .background(Theme.Colors.turquoise.opacity(0.15))
+                    .cornerRadius(Theme.CornerRadius.full)
+            }
+        }
+        .padding(Theme.Spacing.md)
+        .background(Theme.Colors.backgroundLight.opacity(0.5))
+        .cornerRadius(Theme.CornerRadius.md)
+    }
+}
+
+// MARK: - People List View
+struct PeopleListView: View {
+    @EnvironmentObject var meshtasticManager: MeshtasticManager
+    @EnvironmentObject var profileManager: ProfileManager
+    @Binding var searchText: String
+    @Binding var selectedFilter: CommunityHubView.PeopleFilter
+    let filteredMembers: [CampMember]
+    let onlineCount: Int
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Search bar
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                TextField("Find someone...", text: $searchText)
+                    .foregroundColor(Theme.Colors.robotCream)
+            }
+            .padding()
+            .background(Theme.Colors.backgroundLight)
+            
+            // Connection status header
+            ConnectionStatusHeader(
+                totalMembers: meshtasticManager.campMembers.count,
+                onlineCount: onlineCount,
+                myConnectionsCount: profileManager.approvedContacts.count
+            )
+            
+            // Filter chips
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Theme.Spacing.sm) {
+                    ForEach(CommunityHubView.PeopleFilter.allCases, id: \.self) { filter in
+                        PeopleFilterChip(
+                            title: filter.rawValue,
+                            icon: filter.icon,
+                            isSelected: selectedFilter == filter
+                        ) {
+                            selectedFilter = filter
+                        }
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, Theme.Spacing.sm)
+            }
+            
+            // Members list
+            ScrollView {
+                LazyVStack(spacing: Theme.Spacing.sm) {
+                    if profileManager.approvedContacts.isEmpty && selectedFilter == .connections {
+                        EmptyConnectionsPrompt()
+                    } else if filteredMembers.isEmpty {
+                        VStack(spacing: Theme.Spacing.md) {
+                            Image(systemName: "person.slash")
+                                .font(.system(size: 48))
+                                .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+                            Text("No one found")
+                                .font(Theme.Typography.headline)
+                                .foregroundColor(Theme.Colors.robotCream)
+                        }
+                        .padding(.top, 60)
+                    } else {
+                        ForEach(filteredMembers) { member in
+                            NavigationLink(destination: CommunityMemberDetailView(member: member)) {
+                                CommunityMemberCard(member: member)
+                            }
+                        }
+                    }
+                }
+                .padding()
+            }
+        }
+    }
+}
+
+// MARK: - People Filter Chip
+struct PeopleFilterChip: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 12))
+                Text(title)
+                    .font(Theme.Typography.caption)
+            }
+            .foregroundColor(isSelected ? Theme.Colors.backgroundDark : Theme.Colors.robotCream)
+            .padding(.horizontal, Theme.Spacing.md)
+            .padding(.vertical, Theme.Spacing.xs)
+            .background(isSelected ? Theme.Colors.turquoise : Theme.Colors.backgroundLight)
+            .cornerRadius(Theme.CornerRadius.full)
+        }
+    }
+}
+
+// MARK: - Channel Chat View
+struct ChannelChatView: View {
+    @EnvironmentObject var channelManager: ChannelManager
+    @EnvironmentObject var profileManager: ProfileManager
+    let channel: Channel
+    @State private var messageText = ""
+    @FocusState private var isInputFocused: Bool
+    
+    var messages: [ChannelMessage] {
+        channelManager.messagesForChannel(channel.id)
+    }
+    
+    var channelColor: Color {
+        switch channel.color {
+        case "sunsetOrange": return Theme.Colors.sunsetOrange
+        case "goldenYellow": return Theme.Colors.goldenYellow
+        case "turquoise": return Theme.Colors.turquoise
+        case "dustyPink": return Theme.Colors.dustyPink
+        case "emergency": return Theme.Colors.emergency
+        case "connected": return Theme.Colors.connected
+        default: return Theme.Colors.robotCream
+        }
+    }
+    
+    var body: some View {
+        ZStack {
+            Theme.Colors.backgroundDark.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Messages
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: Theme.Spacing.sm) {
+                            if messages.isEmpty {
+                                VStack(spacing: Theme.Spacing.md) {
+                                    Image(systemName: channel.icon)
+                                        .font(.system(size: 48))
+                                        .foregroundColor(channelColor.opacity(0.5))
+                                    Text("Welcome to \(channel.displayName)")
+                                        .font(Theme.Typography.headline)
+                                        .foregroundColor(Theme.Colors.robotCream)
+                                    Text(channel.description)
+                                        .font(Theme.Typography.caption)
+                                        .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                                }
+                                .padding(.top, 60)
+                            } else {
+                                ForEach(messages) { message in
+                                    ChannelMessageBubble(message: message)
+                                        .id(message.id)
+                                }
+                            }
+                        }
+                        .padding()
+                    }
+                    .onChange(of: messages.count) { _ in
+                        if let lastMessage = messages.last {
+                            withAnimation {
+                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                            }
+                        }
+                    }
+                }
+                
+                // Input bar
+                HStack(spacing: Theme.Spacing.sm) {
+                    TextField("Message \(channel.displayName)...", text: $messageText)
+                        .textFieldStyle(.plain)
+                        .padding(Theme.Spacing.sm)
+                        .background(Theme.Colors.backgroundLight)
+                        .cornerRadius(Theme.CornerRadius.md)
+                        .foregroundColor(Theme.Colors.robotCream)
+                        .focused($isInputFocused)
+                    
+                    Button(action: sendMessage) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(messageText.isEmpty ? Theme.Colors.robotCream.opacity(0.3) : channelColor)
+                    }
+                    .disabled(messageText.isEmpty)
+                }
+                .padding()
+                .background(Theme.Colors.backgroundMedium)
+            }
+        }
+        .navigationTitle(channel.displayName)
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            channelManager.markChannelAsRead(channel.id)
+        }
+    }
+    
+    private func sendMessage() {
+        guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        channelManager.sendMessage(
+            to: channel.id,
+            content: messageText,
+            senderName: profileManager.myProfile.displayName
+        )
+        messageText = ""
+    }
+}
+
+// MARK: - Channel Message Bubble
+struct ChannelMessageBubble: View {
+    let message: ChannelMessage
+    
+    var isFromMe: Bool {
+        message.senderID == "!local"
+    }
+    
+    var body: some View {
+        HStack {
+            if isFromMe { Spacer() }
+            
+            VStack(alignment: isFromMe ? .trailing : .leading, spacing: 2) {
+                if !isFromMe {
+                    Text(message.senderName)
+                        .font(Theme.Typography.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(Theme.Colors.turquoise)
+                }
+                
+                Text(message.content)
+                    .font(Theme.Typography.body)
+                    .foregroundColor(isFromMe ? .white : Theme.Colors.robotCream)
+                    .padding(Theme.Spacing.sm)
+                    .background(isFromMe ? Theme.Colors.sunsetOrange : Theme.Colors.backgroundMedium)
+                    .cornerRadius(Theme.CornerRadius.md)
+                
+                Text(message.timestamp, style: .time)
+                    .font(.system(size: 10))
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.4))
+            }
+            
+            if !isFromMe { Spacer() }
+        }
+    }
+}
+
+// MARK: - Create Channel View
+struct CreateChannelView: View {
+    @EnvironmentObject var channelManager: ChannelManager
+    @Environment(\.dismiss) var dismiss
+    @State private var name = ""
+    @State private var description = ""
+    @State private var selectedIcon = "number"
+    @State private var isPrivate = false
+    
+    let icons = ["number", "megaphone.fill", "wrench.fill", "fork.knife", "music.note", "sparkles", "heart.fill", "star.fill"]
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Theme.Colors.backgroundDark.ignoresSafeArea()
+                
+                Form {
+                    Section {
+                        TextField("Channel name", text: $name)
+                        TextField("Description", text: $description)
+                    } header: {
+                        Text("Channel Info")
+                    }
+                    
+                    Section {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 50))], spacing: Theme.Spacing.sm) {
+                            ForEach(icons, id: \.self) { icon in
+                                Button(action: { selectedIcon = icon }) {
+                                    Image(systemName: icon)
+                                        .font(.title2)
+                                        .foregroundColor(selectedIcon == icon ? Theme.Colors.turquoise : Theme.Colors.robotCream.opacity(0.5))
+                                        .frame(width: 44, height: 44)
+                                        .background(selectedIcon == icon ? Theme.Colors.turquoise.opacity(0.2) : Theme.Colors.backgroundLight)
+                                        .cornerRadius(Theme.CornerRadius.sm)
+                                }
+                            }
+                        }
+                    } header: {
+                        Text("Icon")
+                    }
+                    
+                    Section {
+                        Toggle("Private Channel", isOn: $isPrivate)
+                    } footer: {
+                        Text("Private channels are invite-only")
+                    }
+                }
+                .scrollContentBackground(.hidden)
+            }
+            .navigationTitle("Create Channel")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Create") {
+                        _ = channelManager.createChannel(
+                            name: name,
+                            description: description,
+                            icon: selectedIcon,
+                            isPrivate: isPrivate
+                        )
+                        dismiss()
+                    }
+                    .disabled(name.isEmpty)
+                }
+            }
         }
     }
 }
@@ -504,7 +944,7 @@ struct EmptyConnectionsPrompt: View {
 // MARK: - Empty Search Result
 struct EmptySearchResult: View {
     let searchText: String
-    let filter: CommunityHubView.CommunityFilter
+    let filter: CommunityHubView.PeopleFilter
     
     var body: some View {
         VStack(spacing: Theme.Spacing.md) {

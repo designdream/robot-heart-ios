@@ -7,13 +7,13 @@ struct ContentView: View {
     @EnvironmentObject var profileManager: ProfileManager
     @EnvironmentObject var announcementManager: AnnouncementManager
     @EnvironmentObject var taskManager: TaskManager
+    @EnvironmentObject var channelManager: ChannelManager
     @State private var selectedTab = 0
     
     // Navigation reset triggers - changing these UUIDs forces views to reset to root
     @State private var homeNavID = UUID()
     @State private var communityNavID = UUID()
     @State private var myBurnNavID = UUID()
-    @State private var messagesNavID = UUID()
     @State private var meNavID = UUID()
     
     // Deep link to DM with specific member
@@ -30,9 +30,9 @@ struct ContentView: View {
         }.count
     }
     
-    /// Community badge: Pending contact requests (someone wants to connect)
+    /// Community badge: Pending contact requests + unread channel messages
     var communityBadge: Int {
-        profileManager.pendingRequestsCount
+        profileManager.pendingRequestsCount + channelManager.totalUnreadCount
     }
     
     /// My Burn badge: Shifts starting soon (within 1 hour) that need you to leave
@@ -40,13 +40,6 @@ struct ContentView: View {
         let oneHourFromNow = Date().addingTimeInterval(3600)
         return shiftManager.myShifts.filter { 
             $0.startTime > Date() && $0.startTime < oneHourFromNow 
-        }.count
-    }
-    
-    /// Messages badge: Urgent help requests only (🆘 messages)
-    var messagesBadge: Int {
-        meshtasticManager.messages.filter { 
-            $0.content.contains("🆘") && $0.timestamp > Date().addingTimeInterval(-3600)
         }.count
     }
     
@@ -61,8 +54,8 @@ struct ContentView: View {
                 .badge(homeBadge > 0 ? homeBadge : 0)
                 .tag(0)
             
-            // Community - THE CORE: People, connections, who's here
-            // Research shows human connection is #1 reason people come to Burning Man
+            // Community - THE CORE: People, Channels, DMs
+            // Unified communication hub - no separate Messages tab
             CommunityHubView()
                 .id(communityNavID)
                 .tabItem {
@@ -71,7 +64,7 @@ struct ContentView: View {
                 .badge(communityBadge > 0 ? communityBadge : 0)
                 .tag(1)
             
-            // My Burn - Your commitments, contributions, opportunities
+            // My Burn - Your commitments, tasks, contributions
             ShiftsView()
                 .id(myBurnNavID)
                 .tabItem {
@@ -80,22 +73,13 @@ struct ContentView: View {
                 .badge(myBurnBadge > 0 ? myBurnBadge : 0)
                 .tag(2)
             
-            // Messages - Global Channel + Direct Messages + Announcements
-            MessagesHubView()
-                .id(messagesNavID)
-                .tabItem {
-                    Label("Messages", systemImage: "bubble.left.and.bubble.right.fill")
-                }
-                .badge(messagesBadge > 0 ? messagesBadge : 0)
-                .tag(3)
-            
             // Me - Profile, QR code, Settings (no badge - no action needed)
             ProfileView()
                 .id(meNavID)
                 .tabItem {
                     Label("Me", systemImage: "person.circle.fill")
                 }
-                .tag(4)
+                .tag(3)
         }
         .accentColor(Theme.Colors.sunsetOrange)
         .onAppear {
@@ -130,8 +114,7 @@ struct ContentView: View {
         case 0: homeNavID = UUID()
         case 1: communityNavID = UUID()
         case 2: myBurnNavID = UUID()
-        case 3: messagesNavID = UUID()
-        case 4: meNavID = UUID()
+        case 3: meNavID = UUID()
         default: break
         }
     }
@@ -145,11 +128,11 @@ struct ContentView: View {
         UITabBar.appearance().scrollEdgeAppearance = appearance
     }
     
-    /// Navigate to Messages tab and open DM with specific member
+    /// Navigate to Community tab (DMs section) with specific member
     func openDMWithMember(_ memberID: String) {
         dmMemberID = memberID
-        selectedTab = 3 // Messages tab
-        messagesNavID = UUID() // Reset to show DM
+        selectedTab = 1 // Community tab (now has DMs)
+        communityNavID = UUID()
     }
 }
 
@@ -170,4 +153,5 @@ extension Notification.Name {
         .environmentObject(DraftManager())
         .environmentObject(ShiftBlockManager())
         .environmentObject(ProfileManager())
+        .environmentObject(ChannelManager())
 }

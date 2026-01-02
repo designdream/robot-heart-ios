@@ -57,6 +57,7 @@
 		A2934688508FB7856B5B88B8 /* MeshtasticProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC6BC74CD97507391B3ADF5 /* MeshtasticProtocol.swift */; };
 		A5F92D867007FA5663F0B0AF /* ShiftTrade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D556E198C0BED5E48FA98E /* ShiftTrade.swift */; };
 		AF0B70574A09B1A3794BC81F /* CampMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58735BB9A1995AF89448A7A9 /* CampMember.swift */; };
+		AFB784E4438C6B41DA94F26A /* ChannelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EE307350DD17629CC91E31A /* ChannelManager.swift */; };
 		B0DDFBBDF815A19A55440544 /* MessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E43A3209B8C80C86CB4F4275 /* MessagesView.swift */; };
 		B1DCD85F4714B339FB59305E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 397E180F2C0F34BD4107949F /* Assets.xcassets */; };
 		B72A58083B35AA6DD25A5DA5 /* ShiftManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D5D58E091FCE4CBF7DC1E6 /* ShiftManager.swift */; };
@@ -70,6 +71,7 @@
 		D0620EF97A1FF876AEF45582 /* ShiftBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDA3DD95A9DC2698289450D4 /* ShiftBlockView.swift */; };
 		D4D48944BA8A6AF7765E1D44 /* LocalDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA6297C0B0B5FFB5F388F481 /* LocalDataManager.swift */; };
 		D6913EF64B60CC568F916BFA /* TaskModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D085F7C70EAAAE0EFEA00219 /* TaskModels.swift */; };
+		D7F85830C12173CCF15A41FE /* Channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ADE3A765FEDD02436E31140 /* Channel.swift */; };
 		D827CF73FD8100F7EF08DB70 /* CampLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 131A3534356E393910BC2BCE /* CampLayoutView.swift */; };
 		DA7E760B793EF66D1E4BD47B /* CampLayoutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF70FE2AEE6BC16D1690EE7A /* CampLayoutManager.swift */; };
 		DBBB431225D3771717ED40A4 /* CampNetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E881999C09405A0742FB74 /* CampNetworkManager.swift */; };
@@ -102,6 +104,7 @@
 		38EC557D817E03087B98E5EF /* SocialCapitalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialCapitalDetailView.swift; sourceTree = "<group>"; };
 		397E180F2C0F34BD4107949F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		410B8F5385FC91BAD6881DBF /* RosterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosterView.swift; sourceTree = "<group>"; };
+		4ADE3A765FEDD02436E31140 /* Channel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Channel.swift; sourceTree = "<group>"; };
 		4AF9E6A3FBE1F9228092A3D3 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		4D6F9299C26E68484388565E /* ShiftBlockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiftBlockManager.swift; sourceTree = "<group>"; };
 		4E1065E2762D4D055BB0214F /* SocialManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialManager.swift; sourceTree = "<group>"; };
@@ -111,6 +114,7 @@
 		5AC177D51163C997242AB991 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		5B13BBD95D68DF700B079F5F /* CloudSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncManager.swift; sourceTree = "<group>"; };
 		5B791B13A26EBA6893127812 /* SocialViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialViews.swift; sourceTree = "<group>"; };
+		5EE307350DD17629CC91E31A /* ChannelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelManager.swift; sourceTree = "<group>"; };
 		61A46D54A5E4939F219EB5EC /* EmergencyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyManager.swift; sourceTree = "<group>"; };
 		62622681DB79A4427E12FD18 /* RobotHeartApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotHeartApp.swift; sourceTree = "<group>"; };
 		6489E4C52788AEA2FEB4ADE6 /* TaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManager.swift; sourceTree = "<group>"; };
@@ -262,6 +266,7 @@
 				D952E04B2D0A0A33B20EA3ED /* BLEMeshManager.swift */,
 				FF70FE2AEE6BC16D1690EE7A /* CampLayoutManager.swift */,
 				B2E881999C09405A0742FB74 /* CampNetworkManager.swift */,
+				5EE307350DD17629CC91E31A /* ChannelManager.swift */,
 				233242547B8E61435A45163A /* CheckInManager.swift */,
 				5B13BBD95D68DF700B079F5F /* CloudSyncManager.swift */,
 				91BA1336E99CA14E16A35611 /* DraftManager.swift */,
@@ -290,6 +295,7 @@
 			children = (
 				53AA0BC5BA429DEB07FF60D3 /* CampLayoutModels.swift */,
 				58735BB9A1995AF89448A7A9 /* CampMember.swift */,
+				4ADE3A765FEDD02436E31140 /* Channel.swift */,
 				9FB79B097B869F4365E87120 /* DisasterResponse.swift */,
 				714FA3EA6A39240C4491529C /* Message.swift */,
 				01FB0DC6CFBF4DDB09F32CAF /* PrivacyProtection.swift */,
@@ -392,6 +398,8 @@
 				D827CF73FD8100F7EF08DB70 /* CampLayoutView.swift in Sources */,
 				AF0B70574A09B1A3794BC81F /* CampMember.swift in Sources */,
 				DBBB431225D3771717ED40A4 /* CampNetworkManager.swift in Sources */,
+				D7F85830C12173CCF15A41FE /* Channel.swift in Sources */,
+				AFB784E4438C6B41DA94F26A /* ChannelManager.swift in Sources */,
 				7AF7DAE6B3A3F457EE3E0E6A /* CheckInManager.swift in Sources */,
 				9E71EB7497732EE810AF9586 /* CheckInView.swift in Sources */,
 				5C8834090BEE7EA64D77E8F4 /* CloudSyncManager.swift in Sources */,
