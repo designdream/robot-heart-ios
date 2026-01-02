@@ -12,37 +12,45 @@ class LocationManager: NSObject, ObservableObject {
     @Published var shareStatusOnly = false // Share battery/status but not location
     
     // MARK: - Private Properties
-    private let locationManager = CLLocationManager()
+    private var locationManager: CLLocationManager?
     private var shareTimer: Timer?
     private var lastSharedLocation: CLLocation?
     private let minimumDistanceChange: CLLocationDistance = 50 // meters
+    private var isSetup = false
     
     // MARK: - Initialization
     override init() {
         super.init()
-        setupLocationManager()
+        // Don't setup location manager here - do it lazily to avoid blocking main thread
     }
     
     // MARK: - Setup
     private func setupLocationManager() {
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = minimumDistanceChange
-        locationManager.allowsBackgroundLocationUpdates = true
-        locationManager.pausesLocationUpdatesAutomatically = false
+        guard !isSetup else { return }
+        isSetup = true
+        
+        let manager = CLLocationManager()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.distanceFilter = minimumDistanceChange
+        manager.allowsBackgroundLocationUpdates = true
+        manager.pausesLocationUpdatesAutomatically = false
+        locationManager = manager
     }
     
     // MARK: - Public Methods
     func requestAuthorization() {
-        locationManager.requestWhenInUseAuthorization()
+        setupLocationManager()
+        locationManager?.requestWhenInUseAuthorization()
     }
     
     func startTracking() {
-        locationManager.startUpdatingLocation()
+        setupLocationManager()
+        locationManager?.startUpdatingLocation()
     }
     
     func stopTracking() {
-        locationManager.stopUpdatingLocation()
+        locationManager?.stopUpdatingLocation()
     }
     
     func startSharing(interval: TimeInterval = 900) {
