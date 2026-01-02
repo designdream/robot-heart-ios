@@ -10,6 +10,8 @@ struct CampMember: Identifiable, Codable, Hashable {
     var batteryLevel: Int?
     var status: ConnectionStatus
     var currentShift: Shift?
+    var isGhostMode: Bool = false  // Privacy: hide from map
+    var lastKnownLocation: String? // Human-readable location (e.g., "7:30 & G")
     
     // Hashable conformance based on unique ID
     func hash(into hasher: inout Hasher) {

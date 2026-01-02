@@ -214,6 +214,13 @@ struct CampMap: Codable {
         lastUpdated = Date()
     }
     
+    mutating func updateStructurePosition(_ structureID: UUID, x: Double, y: Double) {
+        guard let index = structures.firstIndex(where: { $0.id == structureID }) else { return }
+        structures[index].xPosition = max(0, min(1, x))
+        structures[index].yPosition = max(0, min(1, y))
+        lastUpdated = Date()
+    }
+    
     func structure(for memberID: String) -> CampMapStructure? {
         structures.first { $0.assignedMembers.contains(memberID) }
     }

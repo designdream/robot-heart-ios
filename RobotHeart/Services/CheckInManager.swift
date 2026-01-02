@@ -10,11 +10,15 @@ class CheckInManager: ObservableObject {
     @Published var memberCheckIns: [String: Date] = [:] // memberID: lastCheckIn
     @Published var overdueMembers: [String] = []
     
+    // MARK: - Opt-in Setting (OFF by default - respects burner autonomy)
+    @Published var checkInEnabled: Bool = false  // OFF by default
+    
     // MARK: - Private Properties
     private let userDefaults = UserDefaults.standard
     private let lastCheckInKey = "lastCheckIn"
     private let checkInIntervalKey = "checkInInterval"
     private let memberCheckInsKey = "memberCheckIns"
+    private let checkInEnabledKey = "checkInEnabled"
     private let currentUserID = "!local"
     private var cancellables = Set<AnyCancellable>()
     private var checkTimer: Timer?
@@ -22,7 +26,32 @@ class CheckInManager: ObservableObject {
     // MARK: - Initialization
     init() {
         loadState()
-        startMonitoring()
+        // Only start monitoring if user has opted in
+        if checkInEnabled {
+            startMonitoring()
+        }
+    }
+    
+    // MARK: - Enable/Disable Check-In
+    func setCheckInEnabled(_ enabled: Bool) {
+        checkInEnabled = enabled
+        userDefaults.set(enabled, forKey: checkInEnabledKey)
+        
+        if enabled {
+            startMonitoring()
+        } else {
+            stopMonitoring()
+            isCheckInOverdue = false
+            // Cancel any pending notifications
+            UNUserNotificationCenter.current().removePendingNotificationRequests(
+                withIdentifiers: ["checkin-reminder", "checkin-overdue"]
+            )
+        }
+    }
+    
+    private func stopMonitoring() {
+        checkTimer?.invalidate()
+        checkTimer = nil
     }
     
     // MARK: - Check In
@@ -181,6 +210,9 @@ class CheckInManager: ObservableObject {
         if checkInInterval == 0 {
             checkInInterval = 14400 // Default 4 hours
         }
+        
+        // Load opt-in setting (defaults to false/OFF)
+        checkInEnabled = userDefaults.bool(forKey: checkInEnabledKey)
         
         if let data = userDefaults.data(forKey: memberCheckInsKey),
            let decoded = try? JSONDecoder().decode([String: Date].self, from: data) {

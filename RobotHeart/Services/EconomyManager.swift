@@ -216,25 +216,51 @@ class EconomyManager: ObservableObject {
         case notAvailable
     }
     
-    // MARK: - Leaderboard (Anonymous)
+    // MARK: - Leaderboard (Named for Accountability)
     struct LeaderboardEntry: Identifiable {
         let id = UUID()
+        let memberID: String
+        let memberName: String      // Playa name - accountability requires names
         let rank: Int
         let points: Int
         let shiftsCompleted: Int
+        let shiftsNoShow: Int       // Show no-shows for accountability
         let reliability: Double
         let isMe: Bool
+        
+        var reliabilityStatus: ReliabilityStatus {
+            if shiftsNoShow == 0 && reliability >= 0.95 { return .superstar }
+            if reliability >= 0.9 { return .reliable }
+            if reliability >= 0.75 { return .needsImprovement }
+            return .unreliable
+        }
+        
+        enum ReliabilityStatus: String {
+            case superstar = "⭐ Superstar"
+            case reliable = "✓ Reliable"
+            case needsImprovement = "⚠️ Needs Improvement"
+            case unreliable = "❌ Unreliable"
+            
+            var color: String {
+                switch self {
+                case .superstar: return "goldenYellow"
+                case .reliable: return "connected"
+                case .needsImprovement: return "warning"
+                case .unreliable: return "disconnected"
+                }
+            }
+        }
     }
     
     func refreshLeaderboard() {
-        // In production, aggregate from mesh
-        // Show anonymous rankings - no names
+        // In production, aggregate from mesh network
+        // ACCOUNTABILITY: Show names and no-show counts - no anonymity for performance
         leaderboard = [
-            LeaderboardEntry(rank: 1, points: 95, shiftsCompleted: 8, reliability: 1.0, isMe: false),
-            LeaderboardEntry(rank: 2, points: 82, shiftsCompleted: 7, reliability: 1.0, isMe: false),
-            LeaderboardEntry(rank: 3, points: 78, shiftsCompleted: 6, reliability: 0.95, isMe: false),
-            LeaderboardEntry(rank: 4, points: myStanding.pointsEarned, shiftsCompleted: myStanding.shiftsCompleted, reliability: myStanding.reliabilityScore, isMe: true),
-            LeaderboardEntry(rank: 5, points: 65, shiftsCompleted: 5, reliability: 0.9, isMe: false),
+            LeaderboardEntry(memberID: "1", memberName: "Sparkle", rank: 1, points: 95, shiftsCompleted: 8, shiftsNoShow: 0, reliability: 1.0, isMe: false),
+            LeaderboardEntry(memberID: "2", memberName: "Dusty", rank: 2, points: 82, shiftsCompleted: 7, shiftsNoShow: 0, reliability: 1.0, isMe: false),
+            LeaderboardEntry(memberID: "3", memberName: "Blaze", rank: 3, points: 78, shiftsCompleted: 6, shiftsNoShow: 1, reliability: 0.86, isMe: false),
+            LeaderboardEntry(memberID: currentUserID, memberName: "You", rank: 4, points: myStanding.pointsEarned, shiftsCompleted: myStanding.shiftsCompleted, shiftsNoShow: myStanding.shiftsNoShow, reliability: myStanding.reliabilityScore, isMe: true),
+            LeaderboardEntry(memberID: "5", memberName: "Phoenix", rank: 5, points: 65, shiftsCompleted: 5, shiftsNoShow: 0, reliability: 1.0, isMe: false),
         ].sorted { $0.points > $1.points }
     }
     

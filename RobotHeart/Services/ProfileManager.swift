@@ -188,6 +188,11 @@ class ProfileManager: ObservableObject {
         saveCampMap()
     }
     
+    func updateStructurePosition(_ structureID: UUID, x: Double, y: Double) {
+        campMap.updateStructurePosition(structureID, x: x, y: y)
+        saveCampMap()
+    }
+    
     func assignMemberToStructure(_ memberID: String, structureID: UUID) {
         campMap.assignMember(memberID, to: structureID)
         saveCampMap()
