@@ -6,7 +6,39 @@ struct ContentView: View {
     @EnvironmentObject var shiftBlockManager: ShiftBlockManager
     @EnvironmentObject var profileManager: ProfileManager
     @EnvironmentObject var announcementManager: AnnouncementManager
+    @EnvironmentObject var taskManager: TaskManager
     @State private var selectedTab = 0
+    
+    // MARK: - Badge Logic
+    // Badges should only show when ACTION is needed - minimize phone usage
+    // "Put down the phone" philosophy - only interrupt for important things
+    
+    /// Home badge: Urgent announcements only (not all unread)
+    var homeBadge: Int {
+        announcementManager.announcements.filter { 
+            $0.priority == .urgent && !$0.readBy.contains("!local") 
+        }.count
+    }
+    
+    /// Community badge: Pending contact requests (someone wants to connect)
+    var communityBadge: Int {
+        profileManager.pendingRequestsCount
+    }
+    
+    /// My Burn badge: Shifts starting soon (within 1 hour) that need you to leave
+    var myBurnBadge: Int {
+        let oneHourFromNow = Date().addingTimeInterval(3600)
+        return shiftManager.myShifts.filter { 
+            $0.startTime > Date() && $0.startTime < oneHourFromNow 
+        }.count
+    }
+    
+    /// Messages badge: Urgent help requests only (🆘 messages)
+    var messagesBadge: Int {
+        meshtasticManager.messages.filter { 
+            $0.content.contains("🆘") && $0.timestamp > Date().addingTimeInterval(-3600)
+        }.count
+    }
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -15,6 +47,7 @@ struct ContentView: View {
                 .tabItem {
                     Label("Home", systemImage: "heart.fill")
                 }
+                .badge(homeBadge > 0 ? homeBadge : 0)
                 .tag(0)
             
             // Community - THE CORE: People, connections, who's here
@@ -23,7 +56,7 @@ struct ContentView: View {
                 .tabItem {
                     Label("Community", systemImage: "person.3.fill")
                 }
-                .badge(profileManager.pendingRequestsCount > 0 ? profileManager.pendingRequestsCount : 0)
+                .badge(communityBadge > 0 ? communityBadge : 0)
                 .tag(1)
             
             // My Burn - Your commitments, contributions, opportunities
@@ -31,7 +64,7 @@ struct ContentView: View {
                 .tabItem {
                     Label("My Burn", systemImage: "flame.fill")
                 }
-                .badge(shiftManager.badgeCount > 0 ? shiftManager.badgeCount : 0)
+                .badge(myBurnBadge > 0 ? myBurnBadge : 0)
                 .tag(2)
             
             // Messages - Global Channel + Direct Messages + Announcements
@@ -39,10 +72,10 @@ struct ContentView: View {
                 .tabItem {
                     Label("Messages", systemImage: "bubble.left.and.bubble.right.fill")
                 }
-                .badge(announcementManager.unreadCount > 0 ? announcementManager.unreadCount : 0)
+                .badge(messagesBadge > 0 ? messagesBadge : 0)
                 .tag(3)
             
-            // Me - Profile, QR code, Settings
+            // Me - Profile, QR code, Settings (no badge - no action needed)
             ProfileView()
                 .tabItem {
                     Label("Me", systemImage: "person.circle.fill")

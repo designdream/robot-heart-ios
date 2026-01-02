@@ -72,9 +72,9 @@ struct ShiftsView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: Theme.Spacing.sm) {
-                        // Leaderboard
-                        NavigationLink(destination: EconomyDashboardView()) {
-                            Image(systemName: "chart.bar.fill")
+                        // Contribute (unified view - replaces chart icon)
+                        Button(action: { showingOpportunities = true }) {
+                            Image(systemName: "hand.raised.fill")
                                 .foregroundColor(Theme.Colors.turquoise)
                         }
                         
@@ -97,7 +97,7 @@ struct ShiftsView: View {
                 AddTaskView(preselectedArea: nil)
             }
             .sheet(isPresented: $showingOpportunities) {
-                OpportunitiesMarketplaceView()
+                ContributeView()
             }
             .onAppear {
                 economyManager.refreshAvailableShifts()
