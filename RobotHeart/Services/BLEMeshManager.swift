@@ -49,9 +49,10 @@ class BLEMeshManager: NSObject, ObservableObject {
     static let messageCharacteristicUUID = CBUUID(string: "RH02C69E-4993-11ED-B878-0242AC120002")
     static let presenceCharacteristicUUID = CBUUID(string: "RH03D6D2-129E-4DAD-A1DD-7866124401E7")
     
-    // Core Bluetooth managers
-    private var centralManager: CBCentralManager!
-    private var peripheralManager: CBPeripheralManager!
+    // Core Bluetooth managers - lazy initialization to avoid blocking main thread
+    private var centralManager: CBCentralManager?
+    private var peripheralManager: CBPeripheralManager?
+    private var isInitialized = false
     
     // Discovered peers
     @Published var discoveredPeers: [BLEPeer] = []
@@ -82,19 +83,36 @@ class BLEMeshManager: NSObject, ObservableObject {
     
     override init() {
         super.init()
-        centralManager = CBCentralManager(delegate: self, queue: nil)
-        peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
+        // Don't initialize BLE here - do it lazily when needed
+    }
+    
+    // Lazy initialization of BLE managers
+    func initializeBLE() {
+        guard !isInitialized else { return }
+        isInitialized = true
+        
+        // Initialize on background queue to avoid blocking main thread
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let central = CBCentralManager(delegate: self, queue: nil)
+            let peripheral = CBPeripheralManager(delegate: self, queue: nil)
+            
+            DispatchQueue.main.async {
+                self?.centralManager = central
+                self?.peripheralManager = peripheral
+            }
+        }
     }
     
     // MARK: - Scanning (Discover Peers)
     
     func startScanning() {
-        guard centralManager.state == .poweredOn else {
+        initializeBLE()
+        guard let central = centralManager, central.state == .poweredOn else {
             print("BLE not powered on")
             return
         }
         
-        centralManager.scanForPeripherals(
+        central.scanForPeripherals(
             withServices: [Self.serviceUUID],
             options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
         )
@@ -105,7 +123,7 @@ class BLEMeshManager: NSObject, ObservableObject {
     }
     
     func stopScanning() {
-        centralManager.stopScan()
+        centralManager?.stopScan()
         isScanning = false
         if !isAdvertising {
             meshStatus = .idle
@@ -116,7 +134,8 @@ class BLEMeshManager: NSObject, ObservableObject {
     // MARK: - Advertising (Be Discoverable)
     
     func startAdvertising(userID: String, userName: String) {
-        guard peripheralManager.state == .poweredOn else {
+        initializeBLE()
+        guard let peripheral = peripheralManager, peripheral.state == .poweredOn else {
             print("BLE peripheral not powered on")
             return
         }
@@ -142,10 +161,10 @@ class BLEMeshManager: NSObject, ObservableObject {
         )
         
         service.characteristics = [messageChar, presenceChar]
-        peripheralManager.add(service)
+        peripheral.add(service)
         
         // Start advertising
-        peripheralManager.startAdvertising([
+        peripheral.startAdvertising([
             CBAdvertisementDataServiceUUIDsKey: [Self.serviceUUID],
             CBAdvertisementDataLocalNameKey: "RH-\(userName.prefix(8))"
         ])
@@ -156,8 +175,8 @@ class BLEMeshManager: NSObject, ObservableObject {
     }
     
     func stopAdvertising() {
-        peripheralManager.stopAdvertising()
-        peripheralManager.removeAllServices()
+        peripheralManager?.stopAdvertising()
+        peripheralManager?.removeAllServices()
         isAdvertising = false
         if !isScanning {
             meshStatus = .idle
@@ -293,12 +312,12 @@ class BLEMeshManager: NSObject, ObservableObject {
     
     func connectToPeer(_ peer: BLEPeer) {
         guard let peripheral = peer.peripheral else { return }
-        centralManager.connect(peripheral, options: nil)
+        centralManager?.connect(peripheral, options: nil)
     }
     
     func disconnectFromPeer(_ peer: BLEPeer) {
         guard let peripheral = peer.peripheral else { return }
-        centralManager.cancelPeripheralConnection(peripheral)
+        centralManager?.cancelPeripheralConnection(peripheral)
     }
     
     private func addDiscoveredPeer(_ peer: BLEPeer) {
