@@ -77,8 +77,13 @@ class CampNetworkManager: ObservableObject {
         self.bleMesh = bleMesh
         self.messageQueue = messageQueue
         
-        setupMessageHandling()
+        // Don't setup message handling in init - do it lazily
         loadMyCamp()
+    }
+    
+    /// Call this to start camp network services (lazy initialization)
+    func startServices() {
+        setupMessageHandling()
     }
     
     private func setupMessageHandling() {

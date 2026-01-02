@@ -25,12 +25,17 @@ class MessageQueueManager: ObservableObject {
     init(
         localData: LocalDataManager = .shared,
         bleMesh: BLEMeshManager = .shared,
-        meshtastic: MeshtasticManager = MeshtasticManager()
+        meshtastic: MeshtasticManager? = nil
     ) {
         self.localData = localData
         self.bleMesh = bleMesh
-        self.meshtastic = meshtastic
+        self.meshtastic = meshtastic ?? MeshtasticManager()
         
+        // Don't setup callbacks or timers in init - do it lazily
+    }
+    
+    /// Call this to start message queue services (lazy initialization)
+    func startServices() {
         setupCallbacks()
         startRetryTimer()
     }

@@ -60,6 +60,11 @@ class LocalDataManager: ObservableObject {
     
     init(persistence: PersistenceController = .shared) {
         self.persistence = persistence
+        // Don't setup observers or load data in init - do it lazily
+    }
+    
+    /// Call this to start data services (lazy initialization)
+    func startServices() {
         setupObservers()
         loadInitialData()
     }
