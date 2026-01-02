@@ -8,6 +8,7 @@ struct ShiftsView: View {
     @EnvironmentObject var taskManager: TaskManager
     @State private var showingAdminView = false
     @State private var showingDraftHub = false
+    @State private var showingShiftBlocks = false
     @State private var showingAddTask = false
     @State private var showingOpportunities = false
     @State private var showingCampMap = false
@@ -69,8 +70,12 @@ struct ShiftsView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if shiftManager.isAdmin {
                         Menu {
+                            Button(action: { showingShiftBlocks = true }) {
+                                Label("Shift Templates", systemImage: "rectangle.stack.badge.plus")
+                            }
+                            
                             Button(action: { showingAdminView = true }) {
-                                Label("Manage Shifts", systemImage: "calendar.badge.plus")
+                                Label("Shift Calendar", systemImage: "calendar.badge.plus")
                             }
                             
                             Button(action: { showingDraftHub = true }) {
@@ -93,6 +98,9 @@ struct ShiftsView: View {
                     .environmentObject(draftManager)
                     .environmentObject(shiftManager)
                     .environmentObject(meshtasticManager)
+            }
+            .sheet(isPresented: $showingShiftBlocks) {
+                ShiftBlockHubView()
             }
             .sheet(isPresented: $showingAddTask) {
                 AddTaskView(preselectedArea: nil)
