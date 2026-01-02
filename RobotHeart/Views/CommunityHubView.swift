@@ -79,23 +79,31 @@ struct CommunityHubView: View {
                 Theme.Colors.backgroundDark.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // View mode toggle (List / Map)
-                    HStack(spacing: 0) {
+                    // View mode toggle (List / Map) - pill style
+                    HStack(spacing: Theme.Spacing.xs) {
                         ForEach(ViewMode.allCases, id: \.self) { mode in
-                            Button(action: { viewMode = mode }) {
+                            Button(action: { 
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    viewMode = mode 
+                                }
+                            }) {
                                 HStack(spacing: Theme.Spacing.xs) {
                                     Image(systemName: mode.icon)
-                                        .font(.system(size: 14))
+                                        .font(.system(size: 12))
                                     Text(mode.rawValue)
-                                        .font(Theme.Typography.callout)
+                                        .font(Theme.Typography.caption)
+                                        .fontWeight(.medium)
                                 }
-                                .foregroundColor(viewMode == mode ? Theme.Colors.backgroundDark : Theme.Colors.robotCream)
-                                .frame(maxWidth: .infinity)
+                                .foregroundColor(viewMode == mode ? Theme.Colors.backgroundDark : Theme.Colors.robotCream.opacity(0.7))
+                                .padding(.horizontal, Theme.Spacing.md)
                                 .padding(.vertical, Theme.Spacing.sm)
-                                .background(viewMode == mode ? Theme.Colors.turquoise : Color.clear)
+                                .background(viewMode == mode ? Theme.Colors.turquoise : Theme.Colors.backgroundLight)
+                                .cornerRadius(Theme.CornerRadius.full)
                             }
                         }
                     }
+                    .padding(.horizontal, Theme.Spacing.md)
+                    .padding(.vertical, Theme.Spacing.sm)
                     .background(Theme.Colors.backgroundMedium)
                     
                     // Search bar (always visible)

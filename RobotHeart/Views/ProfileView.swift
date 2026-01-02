@@ -44,8 +44,7 @@ struct ProfileView: View {
                         // (Moved from Home - this is identity, not action)
                         YourBurnStoryCard()
                         
-                        // SECTION 3: My Connections
-                        MyConnectionsCard()
+                        // NOTE: My Connections moved to Community tab - that's where people belong
                         
                         // Contact requests
                         if profileManager.pendingRequestsCount > 0 {
