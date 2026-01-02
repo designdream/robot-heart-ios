@@ -9,6 +9,13 @@ struct ContentView: View {
     @EnvironmentObject var taskManager: TaskManager
     @State private var selectedTab = 0
     
+    // Navigation reset triggers - changing these UUIDs forces views to reset to root
+    @State private var homeNavID = UUID()
+    @State private var communityNavID = UUID()
+    @State private var myBurnNavID = UUID()
+    @State private var messagesNavID = UUID()
+    @State private var meNavID = UUID()
+    
     // MARK: - Badge Logic
     // Badges should only show when ACTION is needed - minimize phone usage
     // "Put down the phone" philosophy - only interrupt for important things
@@ -41,9 +48,10 @@ struct ContentView: View {
     }
     
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: tabSelection) {
             // Home - Dashboard with key info, announcements, what's happening
             HomeView()
+                .id(homeNavID)
                 .tabItem {
                     Label("Home", systemImage: "heart.fill")
                 }
@@ -53,6 +61,7 @@ struct ContentView: View {
             // Community - THE CORE: People, connections, who's here
             // Research shows human connection is #1 reason people come to Burning Man
             CommunityHubView()
+                .id(communityNavID)
                 .tabItem {
                     Label("Community", systemImage: "person.3.fill")
                 }
@@ -61,6 +70,7 @@ struct ContentView: View {
             
             // My Burn - Your commitments, contributions, opportunities
             ShiftsView()
+                .id(myBurnNavID)
                 .tabItem {
                     Label("My Burn", systemImage: "flame.fill")
                 }
@@ -69,6 +79,7 @@ struct ContentView: View {
             
             // Messages - Global Channel + Direct Messages + Announcements
             MessagesHubView()
+                .id(messagesNavID)
                 .tabItem {
                     Label("Messages", systemImage: "bubble.left.and.bubble.right.fill")
                 }
@@ -77,6 +88,7 @@ struct ContentView: View {
             
             // Me - Profile, QR code, Settings (no badge - no action needed)
             ProfileView()
+                .id(meNavID)
                 .tabItem {
                     Label("Me", systemImage: "person.circle.fill")
                 }
@@ -85,6 +97,34 @@ struct ContentView: View {
         .accentColor(Theme.Colors.sunsetOrange)
         .onAppear {
             setupTabBarAppearance()
+        }
+    }
+    
+    // MARK: - Tab Selection with Double-Tap to Pop to Root
+    /// Binding that detects when user taps the already-selected tab (double-tap)
+    /// and resets that tab's navigation to root
+    var tabSelection: Binding<Int> {
+        Binding(
+            get: { selectedTab },
+            set: { newTab in
+                if newTab == selectedTab {
+                    // Double-tap detected - reset navigation for this tab
+                    resetNavigationForTab(newTab)
+                }
+                selectedTab = newTab
+            }
+        )
+    }
+    
+    /// Reset navigation to root for the specified tab
+    private func resetNavigationForTab(_ tab: Int) {
+        switch tab {
+        case 0: homeNavID = UUID()
+        case 1: communityNavID = UUID()
+        case 2: myBurnNavID = UUID()
+        case 3: messagesNavID = UUID()
+        case 4: meNavID = UUID()
+        default: break
         }
     }
     
