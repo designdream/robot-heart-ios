@@ -624,11 +624,8 @@ struct ArticleDetailView: View {
                     Divider()
                         .background(Theme.Colors.robotCream.opacity(0.2))
                     
-                    // Content (simplified markdown rendering)
-                    Text(article.content)
-                        .font(Theme.Typography.body)
-                        .foregroundColor(Theme.Colors.robotCream)
-                        .lineSpacing(6)
+                    // Rendered Markdown content
+                    MarkdownContentView(content: article.content)
                     
                     // Tags
                     if !article.tags.isEmpty {
@@ -654,6 +651,243 @@ struct ArticleDetailView: View {
         .onAppear {
             socialManager.incrementViewCount(article.id)
         }
+    }
+}
+
+// MARK: - Markdown Content View
+/// Renders markdown content with proper formatting
+struct MarkdownContentView: View {
+    let content: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            ForEach(parseMarkdownBlocks(content), id: \.id) { block in
+                switch block.type {
+                case .heading1:
+                    Text(block.text)
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(Theme.Colors.robotCream)
+                        .padding(.top, Theme.Spacing.md)
+                    
+                case .heading2:
+                    Text(block.text)
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundColor(Theme.Colors.robotCream)
+                        .padding(.top, Theme.Spacing.sm)
+                    
+                case .heading3:
+                    Text(block.text)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(Theme.Colors.robotCream)
+                        .padding(.top, Theme.Spacing.xs)
+                    
+                case .bulletList:
+                    HStack(alignment: .top, spacing: Theme.Spacing.sm) {
+                        Text("•")
+                            .foregroundColor(Theme.Colors.sunsetOrange)
+                        Text(block.text)
+                            .font(Theme.Typography.body)
+                            .foregroundColor(Theme.Colors.robotCream)
+                    }
+                    
+                case .numberedList:
+                    HStack(alignment: .top, spacing: Theme.Spacing.sm) {
+                        Text("\(block.listNumber).")
+                            .foregroundColor(Theme.Colors.sunsetOrange)
+                            .frame(width: 20, alignment: .trailing)
+                        Text(block.text)
+                            .font(Theme.Typography.body)
+                            .foregroundColor(Theme.Colors.robotCream)
+                    }
+                    
+                case .blockquote:
+                    HStack(spacing: Theme.Spacing.sm) {
+                        Rectangle()
+                            .fill(Theme.Colors.turquoise)
+                            .frame(width: 3)
+                        Text(block.text)
+                            .font(Theme.Typography.body)
+                            .italic()
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.8))
+                    }
+                    .padding(.vertical, Theme.Spacing.xs)
+                    
+                case .codeBlock:
+                    Text(block.text)
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundColor(Theme.Colors.turquoise)
+                        .padding(Theme.Spacing.sm)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.Colors.backgroundLight)
+                        .cornerRadius(Theme.CornerRadius.sm)
+                    
+                case .horizontalRule:
+                    Divider()
+                        .background(Theme.Colors.robotCream.opacity(0.3))
+                        .padding(.vertical, Theme.Spacing.sm)
+                    
+                case .paragraph:
+                    // Use SwiftUI's built-in markdown for inline formatting
+                    Text(parseInlineMarkdown(block.text))
+                        .font(Theme.Typography.body)
+                        .foregroundColor(Theme.Colors.robotCream)
+                        .lineSpacing(6)
+                }
+            }
+        }
+    }
+    
+    // Parse markdown into blocks
+    private func parseMarkdownBlocks(_ content: String) -> [MarkdownBlock] {
+        var blocks: [MarkdownBlock] = []
+        let lines = content.components(separatedBy: "\n")
+        var currentParagraph = ""
+        var listNumber = 0
+        var inCodeBlock = false
+        var codeBlockContent = ""
+        
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            
+            // Code block handling
+            if trimmed.hasPrefix("```") {
+                if inCodeBlock {
+                    blocks.append(MarkdownBlock(type: .codeBlock, text: codeBlockContent.trimmingCharacters(in: .newlines)))
+                    codeBlockContent = ""
+                    inCodeBlock = false
+                } else {
+                    if !currentParagraph.isEmpty {
+                        blocks.append(MarkdownBlock(type: .paragraph, text: currentParagraph.trimmingCharacters(in: .newlines)))
+                        currentParagraph = ""
+                    }
+                    inCodeBlock = true
+                }
+                continue
+            }
+            
+            if inCodeBlock {
+                codeBlockContent += line + "\n"
+                continue
+            }
+            
+            // Empty line - end paragraph
+            if trimmed.isEmpty {
+                if !currentParagraph.isEmpty {
+                    blocks.append(MarkdownBlock(type: .paragraph, text: currentParagraph.trimmingCharacters(in: .newlines)))
+                    currentParagraph = ""
+                }
+                listNumber = 0
+                continue
+            }
+            
+            // Headings
+            if trimmed.hasPrefix("### ") {
+                if !currentParagraph.isEmpty {
+                    blocks.append(MarkdownBlock(type: .paragraph, text: currentParagraph.trimmingCharacters(in: .newlines)))
+                    currentParagraph = ""
+                }
+                blocks.append(MarkdownBlock(type: .heading3, text: String(trimmed.dropFirst(4))))
+                continue
+            }
+            if trimmed.hasPrefix("## ") {
+                if !currentParagraph.isEmpty {
+                    blocks.append(MarkdownBlock(type: .paragraph, text: currentParagraph.trimmingCharacters(in: .newlines)))
+                    currentParagraph = ""
+                }
+                blocks.append(MarkdownBlock(type: .heading2, text: String(trimmed.dropFirst(3))))
+                continue
+            }
+            if trimmed.hasPrefix("# ") {
+                if !currentParagraph.isEmpty {
+                    blocks.append(MarkdownBlock(type: .paragraph, text: currentParagraph.trimmingCharacters(in: .newlines)))
+                    currentParagraph = ""
+                }
+                blocks.append(MarkdownBlock(type: .heading1, text: String(trimmed.dropFirst(2))))
+                continue
+            }
+            
+            // Horizontal rule
+            if trimmed == "---" || trimmed == "***" || trimmed == "___" {
+                if !currentParagraph.isEmpty {
+                    blocks.append(MarkdownBlock(type: .paragraph, text: currentParagraph.trimmingCharacters(in: .newlines)))
+                    currentParagraph = ""
+                }
+                blocks.append(MarkdownBlock(type: .horizontalRule, text: ""))
+                continue
+            }
+            
+            // Bullet list
+            if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") {
+                if !currentParagraph.isEmpty {
+                    blocks.append(MarkdownBlock(type: .paragraph, text: currentParagraph.trimmingCharacters(in: .newlines)))
+                    currentParagraph = ""
+                }
+                blocks.append(MarkdownBlock(type: .bulletList, text: String(trimmed.dropFirst(2))))
+                continue
+            }
+            
+            // Numbered list
+            if let match = trimmed.range(of: #"^\d+\.\s"#, options: .regularExpression) {
+                if !currentParagraph.isEmpty {
+                    blocks.append(MarkdownBlock(type: .paragraph, text: currentParagraph.trimmingCharacters(in: .newlines)))
+                    currentParagraph = ""
+                }
+                listNumber += 1
+                let text = String(trimmed[match.upperBound...])
+                blocks.append(MarkdownBlock(type: .numberedList, text: text, listNumber: listNumber))
+                continue
+            }
+            
+            // Blockquote
+            if trimmed.hasPrefix("> ") {
+                if !currentParagraph.isEmpty {
+                    blocks.append(MarkdownBlock(type: .paragraph, text: currentParagraph.trimmingCharacters(in: .newlines)))
+                    currentParagraph = ""
+                }
+                blocks.append(MarkdownBlock(type: .blockquote, text: String(trimmed.dropFirst(2))))
+                continue
+            }
+            
+            // Regular paragraph text
+            if currentParagraph.isEmpty {
+                currentParagraph = trimmed
+            } else {
+                currentParagraph += " " + trimmed
+            }
+        }
+        
+        // Don't forget remaining paragraph
+        if !currentParagraph.isEmpty {
+            blocks.append(MarkdownBlock(type: .paragraph, text: currentParagraph.trimmingCharacters(in: .newlines)))
+        }
+        
+        return blocks
+    }
+    
+    // Parse inline markdown (bold, italic, code, links)
+    private func parseInlineMarkdown(_ text: String) -> AttributedString {
+        // SwiftUI's Text supports markdown natively in iOS 15+
+        if let attributed = try? AttributedString(markdown: text, options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)) {
+            return attributed
+        }
+        return AttributedString(text)
+    }
+}
+
+// MARK: - Markdown Block
+struct MarkdownBlock: Identifiable {
+    let id = UUID()
+    let type: BlockType
+    let text: String
+    var listNumber: Int = 0
+    
+    enum BlockType {
+        case heading1, heading2, heading3
+        case paragraph
+        case bulletList, numberedList
+        case blockquote
+        case codeBlock
+        case horizontalRule
     }
 }
 
