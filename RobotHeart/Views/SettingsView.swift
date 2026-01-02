@@ -4,6 +4,7 @@ struct SettingsView: View {
     @EnvironmentObject var meshtasticManager: MeshtasticManager
     @EnvironmentObject var locationManager: LocationManager
     @EnvironmentObject var shiftManager: ShiftManager
+    @EnvironmentObject var checkInManager: CheckInManager
     @State private var userName = "You"
     @State private var selectedRole: CampMember.Role = .general
     @State private var shareInterval: Double = 15
@@ -144,6 +145,47 @@ struct SettingsView: View {
                             .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
                     }
                     
+                    // Safety Check-In (Opt-in)
+                    Section {
+                        Toggle(isOn: Binding(
+                            get: { checkInManager.checkInEnabled },
+                            set: { checkInManager.setCheckInEnabled($0) }
+                        )) {
+                            HStack {
+                                Image(systemName: "heart.text.square.fill")
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Safety Check-In")
+                                    Text("Periodic reminders to let camp know you're OK")
+                                        .font(Theme.Typography.caption)
+                                        .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                                }
+                            }
+                            .foregroundColor(Theme.Colors.robotCream)
+                        }
+                        .tint(Theme.Colors.sunsetOrange)
+                        
+                        if checkInManager.checkInEnabled {
+                            Picker("Interval", selection: Binding(
+                                get: { checkInManager.checkInInterval },
+                                set: { checkInManager.setCheckInInterval($0) }
+                            )) {
+                                Text("2 hours").tag(TimeInterval(7200))
+                                Text("4 hours").tag(TimeInterval(14400))
+                                Text("6 hours").tag(TimeInterval(21600))
+                                Text("8 hours").tag(TimeInterval(28800))
+                            }
+                            .foregroundColor(Theme.Colors.robotCream)
+                        }
+                    } header: {
+                        Text("Safety")
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                    } footer: {
+                        Text(checkInManager.checkInEnabled ?
+                             "You'll get reminders to check in. Your camp can see if you're overdue." :
+                             "Off by default. Enable if you want periodic safety check-in reminders.")
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    }
+                    
                     // Admin settings
                     Section {
                         Toggle(isOn: Binding(
@@ -233,4 +275,5 @@ struct SettingsView: View {
         .environmentObject(MeshtasticManager())
         .environmentObject(LocationManager())
         .environmentObject(ShiftManager())
+        .environmentObject(CheckInManager())
 }

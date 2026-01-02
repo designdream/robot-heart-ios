@@ -7,7 +7,6 @@ struct RosterView: View {
     @State private var showingAddMember = false
     @State private var searchText: String = ""
     @State private var selectedMember: CampMember?
-    @State private var showingMemberDetail = false
     
     var filteredMembers: [CampMember] {
         var members = meshtasticManager.campMembers
@@ -57,7 +56,6 @@ struct RosterView: View {
                                 MemberCard(member: member)
                                     .onTapGesture {
                                         selectedMember = member
-                                        showingMemberDetail = true
                                     }
                                     .transition(.scale.combined(with: .opacity))
                             }
@@ -80,10 +78,8 @@ struct RosterView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingMemberDetail) {
-            if let member = selectedMember {
-                MemberDetailView(member: member)
-            }
+        .sheet(item: $selectedMember) { member in
+            MemberDetailView(member: member)
         }
     }
     

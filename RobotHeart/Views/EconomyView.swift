@@ -400,26 +400,397 @@ struct ClaimCard: View {
     }
 }
 
-// MARK: - Leaderboard View (Anonymous)
+// MARK: - Leaderboard View (Accountability & Social Capital)
 struct LeaderboardView: View {
     @EnvironmentObject var economyManager: EconomyManager
     
     var body: some View {
         ScrollView {
-            VStack(spacing: Theme.Spacing.sm) {
-                Text("Anonymous Rankings")
-                    .font(Theme.Typography.caption)
-                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
-                    .padding(.top)
+            VStack(spacing: Theme.Spacing.md) {
+                // Social capital explanation
+                SocialCapitalHeader()
                 
-                ForEach(economyManager.leaderboard) { entry in
-                    LeaderboardRow(entry: entry)
-                }
+                // Camp accountability leaderboard
+                CampLeaderboardSection()
+                
+                // Trusted network section
+                TrustedNetworkSection()
             }
             .padding()
         }
     }
 }
+
+// MARK: - Social Capital Header
+struct SocialCapitalHeader: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            HStack {
+                Image(systemName: "heart.circle.fill")
+                    .font(.title2)
+                    .foregroundColor(Theme.Colors.sunsetOrange)
+                
+                Text("Social Capital")
+                    .font(Theme.Typography.headline)
+                    .foregroundColor(Theme.Colors.robotCream)
+            }
+            
+            Text("Your contributions build trust that carries across events, year-round. Reliable people find each other.")
+                .font(Theme.Typography.caption)
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.Colors.sunsetOrange.opacity(0.1))
+        .cornerRadius(Theme.CornerRadius.md)
+    }
+}
+
+// MARK: - Trusted Network Section
+struct TrustedNetworkSection: View {
+    @EnvironmentObject var economyManager: EconomyManager
+    
+    // Filter for superstars and reliable members
+    var trustedMembers: [EconomyManager.LeaderboardEntry] {
+        economyManager.leaderboard.filter { entry in
+            // Consider someone "trusted" if they have good reliability
+            entry.shiftsCompleted >= 3
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            HStack {
+                Image(systemName: "person.2.badge.gearshape.fill")
+                    .foregroundColor(Theme.Colors.turquoise)
+                Text("Trusted Network")
+                    .font(Theme.Typography.headline)
+                    .foregroundColor(Theme.Colors.robotCream)
+                
+                Spacer()
+                
+                Text("\(trustedMembers.count) members")
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+            }
+            
+            Text("People who consistently show up. This reputation carries to future events.")
+                .font(Theme.Typography.caption)
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+            
+            if trustedMembers.isEmpty {
+                HStack {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(Theme.Colors.goldenYellow)
+                    Text("Complete shifts to join the trusted network")
+                        .font(Theme.Typography.body)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Theme.Colors.backgroundLight)
+                .cornerRadius(Theme.CornerRadius.md)
+            } else {
+                // Show trusted members with their reliability badges
+                ForEach(trustedMembers.prefix(5)) { member in
+                    TrustedMemberRow(entry: member)
+                }
+                
+                if trustedMembers.count > 5 {
+                    Text("+ \(trustedMembers.count - 5) more trusted members")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .padding()
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.lg)
+    }
+}
+
+// MARK: - Trusted Member Row
+struct TrustedMemberRow: View {
+    let entry: EconomyManager.LeaderboardEntry
+    
+    var reliabilityBadge: (text: String, color: Color) {
+        switch entry.shiftsCompleted {
+        case 10...: return ("⭐ Superstar", Theme.Colors.goldenYellow)
+        case 5..<10: return ("Reliable", Theme.Colors.connected)
+        case 3..<5: return ("Contributing", Theme.Colors.turquoise)
+        default: return ("New", Theme.Colors.robotCream.opacity(0.5))
+        }
+    }
+    
+    var body: some View {
+        HStack {
+            // Avatar placeholder
+            Circle()
+                .fill(entry.isMe ? Theme.Colors.sunsetOrange.opacity(0.3) : Theme.Colors.turquoise.opacity(0.3))
+                .frame(width: 36, height: 36)
+                .overlay(
+                    Text(entry.isMe ? "You" : "")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(Theme.Colors.sunsetOrange)
+                )
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.isMe ? "You" : "Camp Member")
+                    .font(Theme.Typography.callout)
+                    .foregroundColor(entry.isMe ? Theme.Colors.sunsetOrange : Theme.Colors.robotCream)
+                
+                Text(reliabilityBadge.text)
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(reliabilityBadge.color)
+            }
+            
+            Spacer()
+            
+            // Contribution stats
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(entry.shiftsCompleted) shifts")
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream)
+                
+                Text("\(entry.points) pts")
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+            }
+        }
+        .padding(Theme.Spacing.sm)
+        .background(entry.isMe ? Theme.Colors.sunsetOrange.opacity(0.1) : Theme.Colors.backgroundLight)
+        .cornerRadius(Theme.CornerRadius.sm)
+    }
+}
+
+// MARK: - Camp Leaderboard Section
+struct CampLeaderboardSection: View {
+    @EnvironmentObject var economyManager: EconomyManager
+    
+    // Find my position
+    var myRank: Int {
+        economyManager.leaderboard.first(where: { $0.isMe })?.rank ?? 0
+    }
+    
+    // Top 3 for podium
+    var topThree: [EconomyManager.LeaderboardEntry] {
+        Array(economyManager.leaderboard.prefix(3))
+    }
+    
+    // Rest of leaderboard
+    var restOfLeaderboard: [EconomyManager.LeaderboardEntry] {
+        Array(economyManager.leaderboard.dropFirst(3))
+    }
+    
+    var body: some View {
+        VStack(spacing: Theme.Spacing.lg) {
+            // My position highlight
+            if myRank > 0 {
+                MyRankCard(rank: myRank, totalParticipants: economyManager.leaderboard.count)
+            }
+            
+            // Podium for top 3
+            if topThree.count >= 3 {
+                LeaderboardPodium(entries: topThree)
+            }
+            
+            // Stats summary
+            LeaderboardStats()
+            
+            // Full rankings
+            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                Text("Full Rankings")
+                    .font(Theme.Typography.headline)
+                    .foregroundColor(Theme.Colors.robotCream)
+                
+                ForEach(economyManager.leaderboard) { entry in
+                    LeaderboardRow(entry: entry)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - My Rank Card
+struct MyRankCard: View {
+    let rank: Int
+    let totalParticipants: Int
+    
+    var percentile: Int {
+        guard totalParticipants > 0 else { return 0 }
+        return Int((1.0 - Double(rank - 1) / Double(totalParticipants)) * 100)
+    }
+    
+    var motivationalText: String {
+        switch rank {
+        case 1: return "🏆 You're the champion!"
+        case 2: return "🥈 So close to the top!"
+        case 3: return "🥉 On the podium!"
+        case 4...10: return "🔥 Top 10! Keep pushing!"
+        default: return "💪 Every shift counts!"
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: Theme.Spacing.sm) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("YOUR RANK")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                    
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text("#\(rank)")
+                            .font(.system(size: 42, weight: .bold))
+                            .foregroundColor(rank <= 3 ? Theme.Colors.goldenYellow : Theme.Colors.sunsetOrange)
+                        
+                        Text("of \(totalParticipants)")
+                            .font(Theme.Typography.body)
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    }
+                }
+                
+                Spacer()
+                
+                // Percentile badge
+                VStack(spacing: 2) {
+                    Text("Top")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                    Text("\(100 - percentile + 1)%")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(Theme.Colors.turquoise)
+                }
+                .padding()
+                .background(Theme.Colors.turquoise.opacity(0.15))
+                .cornerRadius(Theme.CornerRadius.md)
+            }
+            
+            Text(motivationalText)
+                .font(Theme.Typography.callout)
+                .foregroundColor(Theme.Colors.robotCream)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding()
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.lg)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                .stroke(Theme.Colors.sunsetOrange.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Leaderboard Podium
+struct LeaderboardPodium: View {
+    let entries: [EconomyManager.LeaderboardEntry]
+    
+    var body: some View {
+        HStack(alignment: .bottom, spacing: Theme.Spacing.sm) {
+            // 2nd place
+            if entries.count > 1 {
+                PodiumSpot(entry: entries[1], height: 80, medal: "🥈")
+            }
+            
+            // 1st place
+            if entries.count > 0 {
+                PodiumSpot(entry: entries[0], height: 100, medal: "🏆")
+            }
+            
+            // 3rd place
+            if entries.count > 2 {
+                PodiumSpot(entry: entries[2], height: 60, medal: "🥉")
+            }
+        }
+        .padding(.vertical, Theme.Spacing.md)
+    }
+}
+
+// MARK: - Podium Spot
+struct PodiumSpot: View {
+    let entry: EconomyManager.LeaderboardEntry
+    let height: CGFloat
+    let medal: String
+    
+    var body: some View {
+        VStack(spacing: Theme.Spacing.xs) {
+            Text(medal)
+                .font(.system(size: 28))
+            
+            Text(entry.isMe ? "You" : "Camper")
+                .font(Theme.Typography.caption)
+                .foregroundColor(entry.isMe ? Theme.Colors.sunsetOrange : Theme.Colors.robotCream)
+                .lineLimit(1)
+            
+            Text("\(entry.points)")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(Theme.Colors.robotCream)
+            
+            Text("pts")
+                .font(.system(size: 10))
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+            
+            Rectangle()
+                .fill(entry.isMe ? Theme.Colors.sunsetOrange : Theme.Colors.turquoise)
+                .frame(height: height)
+                .cornerRadius(Theme.CornerRadius.sm, corners: [.topLeft, .topRight])
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Leaderboard Stats
+struct LeaderboardStats: View {
+    @EnvironmentObject var economyManager: EconomyManager
+    
+    var totalPoints: Int {
+        economyManager.leaderboard.reduce(0) { $0 + $1.points }
+    }
+    
+    var totalShifts: Int {
+        economyManager.leaderboard.reduce(0) { $0 + $1.shiftsCompleted }
+    }
+    
+    var avgPoints: Int {
+        guard !economyManager.leaderboard.isEmpty else { return 0 }
+        return totalPoints / economyManager.leaderboard.count
+    }
+    
+    var body: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            LeaderboardStatItem(value: "\(economyManager.leaderboard.count)", label: "Participants", icon: "person.3.fill")
+            LeaderboardStatItem(value: "\(totalShifts)", label: "Shifts Done", icon: "checkmark.circle.fill")
+            LeaderboardStatItem(value: "\(avgPoints)", label: "Avg Points", icon: "chart.bar.fill")
+        }
+        .padding()
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.md)
+    }
+}
+
+// MARK: - Leaderboard Stat Item
+struct LeaderboardStatItem: View {
+    let value: String
+    let label: String
+    let icon: String
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(Theme.Colors.turquoise)
+            Text(value)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(Theme.Colors.robotCream)
+            Text(label)
+                .font(.system(size: 10))
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
 
 // MARK: - Leaderboard Row
 struct LeaderboardRow: View {

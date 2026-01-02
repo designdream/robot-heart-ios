@@ -35,9 +35,9 @@ struct ProfileView: View {
                             SettingsRow(icon: "pencil.circle.fill", title: "Edit Profile", color: Theme.Colors.sunsetOrange)
                         }
                         
-                        // Camp location
-                        NavigationLink(destination: CampMapView()) {
-                            SettingsRow(icon: "map.fill", title: "Camp Map & Location", color: Theme.Colors.connected)
+                        // Camp location - links to Camp Layout Planner
+                        NavigationLink(destination: CampLayoutPlannerView()) {
+                            SettingsRow(icon: "map.fill", title: "Camp Layout", color: Theme.Colors.connected)
                         }
                     }
                     .padding()
@@ -505,160 +505,11 @@ struct PrivacySettingsView: View {
     }
 }
 
-// MARK: - Camp Map View
-struct CampMapView: View {
-    @EnvironmentObject var profileManager: ProfileManager
-    @EnvironmentObject var meshtasticManager: MeshtasticManager
-    @EnvironmentObject var shiftManager: ShiftManager
-    @State private var showingImagePicker = false
-    @State private var showingAddStructure = false
-    @State private var selectedStructure: CampMapStructure?
-    @State private var tapLocation: CGPoint = .zero
-    
-    var body: some View {
-        ZStack {
-            Theme.Colors.backgroundDark.ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                // Map area
-                GeometryReader { geometry in
-                    ZStack {
-                        // Background map image or placeholder
-                        if let imageData = profileManager.campMap.imageData,
-                           let uiImage = UIImage(data: imageData) {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        } else {
-                            Rectangle()
-                                .fill(Theme.Colors.backgroundMedium)
-                            
-                            VStack(spacing: Theme.Spacing.md) {
-                                Image(systemName: "map")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
-                                
-                                Text("No Camp Map")
-                                    .font(Theme.Typography.headline)
-                                    .foregroundColor(Theme.Colors.robotCream)
-                                
-                                if shiftManager.isAdmin {
-                                    Button("Upload Map Image") {
-                                        showingImagePicker = true
-                                    }
-                                    .foregroundColor(Theme.Colors.sunsetOrange)
-                                }
-                            }
-                        }
-                        
-                        // Structure markers
-                        ForEach(profileManager.campMap.structures) { structure in
-                            StructureMarker(structure: structure)
-                                .position(
-                                    x: structure.xPosition * geometry.size.width,
-                                    y: structure.yPosition * geometry.size.height
-                                )
-                                .onTapGesture {
-                                    selectedStructure = structure
-                                }
-                        }
-                    }
-                    .gesture(
-                        shiftManager.isAdmin ?
-                        LongPressGesture(minimumDuration: 0.5)
-                            .sequenced(before: DragGesture(minimumDistance: 0))
-                            .onEnded { value in
-                                switch value {
-                                case .second(true, let drag):
-                                    if let location = drag?.location {
-                                        tapLocation = CGPoint(
-                                            x: location.x / geometry.size.width,
-                                            y: location.y / geometry.size.height
-                                        )
-                                        showingAddStructure = true
-                                    }
-                                default:
-                                    break
-                                }
-                            }
-                        : nil
-                    )
-                }
-                
-                // Structure list
-                if !profileManager.campMap.structures.isEmpty {
-                    StructureListView()
-                }
-            }
-        }
-        .navigationTitle("Camp Map")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if shiftManager.isAdmin {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button(action: { showingImagePicker = true }) {
-                            Label("Upload Map", systemImage: "photo")
-                        }
-                        Button(action: { showingAddStructure = true }) {
-                            Label("Add Structure", systemImage: "plus")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .foregroundColor(Theme.Colors.sunsetOrange)
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showingAddStructure) {
-            AddStructureView(position: tapLocation)
-        }
-        .sheet(item: $selectedStructure) { structure in
-            StructureDetailView(structure: structure)
-        }
-    }
-}
+// NOTE: CampMapView, StructureMarker, DraggableStructureMarker, StructureListView removed
+// Camp layout functionality consolidated into CampLayoutPlannerView (CampLayoutView.swift)
 
-// MARK: - Structure Marker
-struct StructureMarker: View {
-    let structure: CampMapStructure
-    
-    var body: some View {
-        VStack(spacing: 2) {
-            ZStack {
-                Circle()
-                    .fill(Theme.Colors.backgroundDark)
-                    .frame(width: 36, height: 36)
-                
-                Image(systemName: structure.type.icon)
-                    .font(.system(size: 16))
-                    .foregroundColor(Theme.Colors.sunsetOrange)
-            }
-            
-            Text(structure.name)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 2)
-                .background(Theme.Colors.backgroundDark.opacity(0.8))
-                .cornerRadius(4)
-            
-            if !structure.assignedMembers.isEmpty {
-                Text("\(structure.assignedMembers.count)")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(Theme.Colors.backgroundDark)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Theme.Colors.connected)
-                    .cornerRadius(Theme.CornerRadius.full)
-            }
-        }
-    }
-}
-
-// MARK: - Structure List View
-struct StructureListView: View {
+// MARK: - Legacy Structure Views (kept for reference, may be removed later)
+struct StructureListViewLegacy: View {
     @EnvironmentObject var profileManager: ProfileManager
     
     var body: some View {

@@ -5,6 +5,7 @@ import SwiftUI
 struct CampHubView: View {
     @EnvironmentObject var meshtasticManager: MeshtasticManager
     @EnvironmentObject var profileManager: ProfileManager
+    @EnvironmentObject var layoutManager: CampLayoutManager
     @State private var selectedSection = 0
     
     var body: some View {
@@ -17,7 +18,7 @@ struct CampHubView: View {
                     Picker("Section", selection: $selectedSection) {
                         Text("Roster").tag(0)
                         Text("Playa Map").tag(1)
-                        Text("Camp Map").tag(2)
+                        Text("Camp Layout").tag(2)
                     }
                     .pickerStyle(.segmented)
                     .padding()
@@ -30,7 +31,8 @@ struct CampHubView: View {
                         MapContentView()
                             .tag(1)
                         
-                        CampMapContentView()
+                        // Unified Camp Layout - combines photo upload + grid planner
+                        CampLayoutPlannerView()
                             .tag(2)
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
@@ -55,7 +57,6 @@ struct RosterContentView: View {
     @State private var selectedRole: CampMember.Role? = nil
     @State private var searchText: String = ""
     @State private var selectedMember: CampMember?
-    @State private var showingMemberDetail = false
     
     var filteredMembers: [CampMember] {
         var members = meshtasticManager.campMembers
@@ -129,17 +130,14 @@ struct RosterContentView: View {
                         MemberRowCard(member: member)
                             .onTapGesture {
                                 selectedMember = member
-                                showingMemberDetail = true
                             }
                     }
                 }
                 .padding()
             }
         }
-        .sheet(isPresented: $showingMemberDetail) {
-            if let member = selectedMember {
-                MemberDetailView(member: member)
-            }
+        .sheet(item: $selectedMember) { member in
+            MemberDetailView(member: member)
         }
     }
 }
@@ -326,89 +324,7 @@ struct MapContentView: View {
     }
 }
 
-// MARK: - Camp Map Content View (embedded)
-struct CampMapContentView: View {
-    @EnvironmentObject var profileManager: ProfileManager
-    @EnvironmentObject var meshtasticManager: MeshtasticManager
-    @EnvironmentObject var shiftManager: ShiftManager
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // Camp map
-            GeometryReader { geometry in
-                ZStack {
-                    if let imageData = profileManager.campMap.imageData,
-                       let uiImage = UIImage(data: imageData) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        
-                        // Structure markers
-                        ForEach(profileManager.campMap.structures) { structure in
-                            StructureMarker(structure: structure)
-                                .position(
-                                    x: structure.xPosition * geometry.size.width,
-                                    y: structure.yPosition * geometry.size.height
-                                )
-                        }
-                    } else {
-                        VStack(spacing: Theme.Spacing.md) {
-                            Image(systemName: "map")
-                                .font(.system(size: 60))
-                                .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
-                            
-                            Text("No Camp Map")
-                                .font(Theme.Typography.headline)
-                                .foregroundColor(Theme.Colors.robotCream)
-                            
-                            if shiftManager.isAdmin {
-                                NavigationLink(destination: CampMapView()) {
-                                    Text("Upload Map")
-                                        .font(Theme.Typography.headline)
-                                        .foregroundColor(Theme.Colors.backgroundDark)
-                                        .padding(.horizontal, Theme.Spacing.lg)
-                                        .padding(.vertical, Theme.Spacing.sm)
-                                        .background(Theme.Colors.sunsetOrange)
-                                        .cornerRadius(Theme.CornerRadius.md)
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Theme.Colors.backgroundMedium)
-                    }
-                }
-            }
-            
-            // Structure list
-            if !profileManager.campMap.structures.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: Theme.Spacing.sm) {
-                        ForEach(profileManager.campMap.structures) { structure in
-                            NavigationLink(destination: StructureDetailView(structure: structure)) {
-                                VStack(spacing: 4) {
-                                    Image(systemName: structure.type.icon)
-                                        .foregroundColor(Theme.Colors.turquoise)
-                                    Text(structure.name)
-                                        .font(Theme.Typography.caption)
-                                        .foregroundColor(Theme.Colors.robotCream)
-                                    Text("\(structure.assignedMembers.count)")
-                                        .font(.system(size: 10))
-                                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
-                                }
-                                .padding(Theme.Spacing.sm)
-                                .background(Theme.Colors.backgroundMedium)
-                                .cornerRadius(Theme.CornerRadius.sm)
-                            }
-                        }
-                    }
-                    .padding()
-                }
-                .background(Theme.Colors.backgroundDark)
-            }
-        }
-    }
-}
+// NOTE: CampMapContentView removed - consolidated into CampLayoutPlannerView
 
 #Preview {
     CampHubView()
@@ -418,4 +334,5 @@ struct CampMapContentView: View {
         .environmentObject(LocationManager())
         .environmentObject(EmergencyManager())
         .environmentObject(ShiftManager())
+        .environmentObject(CampLayoutManager())
 }
