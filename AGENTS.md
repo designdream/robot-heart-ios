@@ -79,6 +79,7 @@ RobotHeart/
 | `MessageQueueManager` | Store-and-forward messaging |
 | `CloudSyncManager` | CloudKit sync via gateway nodes (Starlink) |
 | `CampNetworkManager` | Multi-camp protocol, camp discovery |
+| `BiometricAuthManager` | Face ID/Touch ID authentication (offline, default ON) |
 | `FieldLogger` | Lightweight logging for off-grid field deployment |
 
 ### Meshtastic Protocol Implementation
