@@ -239,12 +239,6 @@ struct YourBurnStoryCard: View {
             }
             .frame(maxWidth: .infinity)
             
-            // Motivational message
-            Text(motivationalMessage)
-                .font(Theme.Typography.caption)
-                .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
-                .italic()
-            
             // Tap hint
             HStack {
                 Spacer()
@@ -269,18 +263,6 @@ struct YourBurnStoryCard: View {
         if score >= 0.95 { return Theme.Colors.connected }
         if score >= 0.8 { return Theme.Colors.goldenYellow }
         return Theme.Colors.emergency
-    }
-    
-    var motivationalMessage: String {
-        let shifts = economyManager.myStanding.shiftsCompleted
-        switch shifts {
-        case 20...: return "\"You are the heart of Robot Heart.\""
-        case 10..<20: return "\"Your dedication inspires others.\""
-        case 5..<10: return "\"The camp counts on you.\""
-        case 3..<5: return "\"Every contribution matters.\""
-        case 1..<3: return "\"Great start! Keep burning.\""
-        default: return "\"Ready to make your mark?\""
-        }
     }
 }
 
