@@ -71,7 +71,7 @@ struct PullDownActionsOverlay: View {
 
 // MARK: - Quick Action Destinations
 enum QuickActionDestination: Identifiable {
-    case messages, tasks, commitments, qrCode, map, guide, events
+    case messages, tasks, commitments, qrCode, map, guide, events, checkIn, findPerson
     var id: Self { self }
 }
 
@@ -81,10 +81,11 @@ struct QuickActionsContent: View {
     let onDismiss: () -> Void
     let onNavigate: (QuickActionDestination) -> Void
     @EnvironmentObject var emergencyManager: EmergencyManager
+    @EnvironmentObject var locationManager: LocationManager
     
     var body: some View {
         VStack(spacing: Theme.Spacing.md) {
-            // Row 1: Critical actions
+            // Row 1: Critical / Safety
             HStack(spacing: Theme.Spacing.md) {
                 // SOS - Most important
                 QuickActionItem(
@@ -97,7 +98,32 @@ struct QuickActionsContent: View {
                     onDismiss()
                 }
                 
-                // Direct Message
+                // Ghost Mode - Quick privacy toggle
+                QuickActionItem(
+                    icon: locationManager.isLocationPrivate ? "eye.slash.fill" : "eye.fill",
+                    label: locationManager.isLocationPrivate ? "Visible" : "Ghost",
+                    color: locationManager.isLocationPrivate ? Theme.Colors.connected : Theme.Colors.backgroundLight
+                ) {
+                    if locationManager.isLocationPrivate {
+                        locationManager.disableGhostMode()
+                    } else {
+                        locationManager.enableGhostMode()
+                    }
+                    onDismiss()
+                }
+                
+                // Check In
+                QuickActionItem(
+                    icon: "checkmark.shield.fill",
+                    label: "Check In",
+                    color: Theme.Colors.connected
+                ) {
+                    onNavigate(.checkIn)
+                }
+            }
+            
+            // Row 2: Connect (Community-first)
+            HStack(spacing: Theme.Spacing.md) {
                 QuickActionItem(
                     icon: "message.fill",
                     label: "Message",
@@ -106,60 +132,39 @@ struct QuickActionsContent: View {
                     onNavigate(.messages)
                 }
                 
-                // Share Location
                 QuickActionItem(
-                    icon: "location.fill",
-                    label: "Location",
-                    color: Theme.Colors.connected
+                    icon: "person.fill",
+                    label: "Find",
+                    color: Theme.Colors.dustyPink
                 ) {
-                    // TODO: Share location action
-                    onDismiss()
-                }
-            }
-            
-            // Row 2: Common actions
-            HStack(spacing: Theme.Spacing.md) {
-                QuickActionItem(
-                    icon: "checklist",
-                    label: "Tasks",
-                    color: Theme.Colors.sunsetOrange
-                ) {
-                    onNavigate(.tasks)
-                }
-                
-                QuickActionItem(
-                    icon: "calendar.badge.clock",
-                    label: "Shifts",
-                    color: Theme.Colors.goldenYellow
-                ) {
-                    onNavigate(.commitments)
+                    onNavigate(.findPerson)
                 }
                 
                 QuickActionItem(
                     icon: "qrcode",
                     label: "Connect",
-                    color: Theme.Colors.dustyPink
+                    color: Theme.Colors.sunsetOrange
                 ) {
                     onNavigate(.qrCode)
                 }
             }
             
-            // Row 3: Resources
+            // Row 3: Navigate / Do
             HStack(spacing: Theme.Spacing.md) {
                 QuickActionItem(
                     icon: "map.fill",
-                    label: "Map",
+                    label: "Places",
                     color: Theme.Colors.turquoise
                 ) {
                     onNavigate(.map)
                 }
                 
                 QuickActionItem(
-                    icon: "book.fill",
-                    label: "Guide",
+                    icon: "flame.fill",
+                    label: "My Burn",
                     color: Theme.Colors.goldenYellow
                 ) {
-                    onNavigate(.guide)
+                    onNavigate(.commitments)
                 }
                 
                 QuickActionItem(
@@ -240,5 +245,6 @@ struct PullDownTrigger: View {
         
         PullDownActionsOverlay(isPresented: .constant(true), navigateTo: .constant(nil))
             .environmentObject(EmergencyManager())
+            .environmentObject(LocationManager())
     }
 }

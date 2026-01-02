@@ -8,8 +8,22 @@ struct CommunityHubView: View {
     @EnvironmentObject var meshtasticManager: MeshtasticManager
     @EnvironmentObject var profileManager: ProfileManager
     @EnvironmentObject var socialManager: SocialManager
+    @EnvironmentObject var locationManager: LocationManager
     @State private var searchText = ""
     @State private var selectedFilter: CommunityFilter = .all
+    @State private var viewMode: ViewMode = .list
+    
+    enum ViewMode: String, CaseIterable {
+        case list = "List"
+        case map = "Map"
+        
+        var icon: String {
+            switch self {
+            case .list: return "list.bullet"
+            case .map: return "map"
+            }
+        }
+    }
     
     enum CommunityFilter: String, CaseIterable {
         case all = "All"
@@ -65,14 +79,26 @@ struct CommunityHubView: View {
                 Theme.Colors.backgroundDark.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Connection status header
-                    ConnectionStatusHeader(
-                        totalMembers: meshtasticManager.campMembers.count,
-                        onlineCount: onlineCount,
-                        myConnectionsCount: profileManager.approvedContacts.count
-                    )
+                    // View mode toggle (List / Map)
+                    HStack(spacing: 0) {
+                        ForEach(ViewMode.allCases, id: \.self) { mode in
+                            Button(action: { viewMode = mode }) {
+                                HStack(spacing: Theme.Spacing.xs) {
+                                    Image(systemName: mode.icon)
+                                        .font(.system(size: 14))
+                                    Text(mode.rawValue)
+                                        .font(Theme.Typography.callout)
+                                }
+                                .foregroundColor(viewMode == mode ? Theme.Colors.backgroundDark : Theme.Colors.robotCream)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, Theme.Spacing.sm)
+                                .background(viewMode == mode ? Theme.Colors.turquoise : Color.clear)
+                            }
+                        }
+                    }
+                    .background(Theme.Colors.backgroundMedium)
                     
-                    // Search
+                    // Search bar (always visible)
                     HStack {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
@@ -81,43 +107,59 @@ struct CommunityHubView: View {
                             .foregroundColor(Theme.Colors.robotCream)
                     }
                     .padding()
-                    .background(Theme.Colors.backgroundMedium)
+                    .background(Theme.Colors.backgroundLight)
                     
-                    // Filter chips
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: Theme.Spacing.sm) {
-                            ForEach(CommunityFilter.allCases, id: \.self) { filter in
-                                CommunityFilterChip(
-                                    title: filter.rawValue,
-                                    icon: filter.icon,
-                                    isSelected: selectedFilter == filter,
-                                    count: countForFilter(filter)
-                                ) {
-                                    selectedFilter = filter
-                                }
-                            }
-                        }
-                        .padding(.horizontal)
-                        .padding(.vertical, Theme.Spacing.sm)
-                    }
-                    
-                    // Members list
-                    ScrollView {
-                        LazyVStack(spacing: Theme.Spacing.sm) {
-                            // Prompt to connect
-                            if profileManager.approvedContacts.isEmpty && selectedFilter == .connections {
-                                EmptyConnectionsPrompt()
-                            } else if filteredMembers.isEmpty {
-                                EmptySearchResult(searchText: searchText, filter: selectedFilter)
-                            } else {
-                                ForEach(filteredMembers) { member in
-                                    NavigationLink(destination: CommunityMemberDetailView(member: member)) {
-                                        CommunityMemberCard(member: member)
+                    // Content based on view mode
+                    if viewMode == .list {
+                        // LIST VIEW
+                        // Connection status header
+                        ConnectionStatusHeader(
+                            totalMembers: meshtasticManager.campMembers.count,
+                            onlineCount: onlineCount,
+                            myConnectionsCount: profileManager.approvedContacts.count
+                        )
+                        
+                        // Filter chips
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: Theme.Spacing.sm) {
+                                ForEach(CommunityFilter.allCases, id: \.self) { filter in
+                                    CommunityFilterChip(
+                                        title: filter.rawValue,
+                                        icon: filter.icon,
+                                        isSelected: selectedFilter == filter,
+                                        count: countForFilter(filter)
+                                    ) {
+                                        selectedFilter = filter
                                     }
                                 }
                             }
+                            .padding(.horizontal)
+                            .padding(.vertical, Theme.Spacing.sm)
                         }
-                        .padding()
+                        
+                        // Members list
+                        ScrollView {
+                            LazyVStack(spacing: Theme.Spacing.sm) {
+                                if profileManager.approvedContacts.isEmpty && selectedFilter == .connections {
+                                    EmptyConnectionsPrompt()
+                                } else if filteredMembers.isEmpty {
+                                    EmptySearchResult(searchText: searchText, filter: selectedFilter)
+                                } else {
+                                    ForEach(filteredMembers) { member in
+                                        NavigationLink(destination: CommunityMemberDetailView(member: member)) {
+                                            CommunityMemberCard(member: member)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding()
+                        }
+                    } else {
+                        // MAP VIEW - See your community spatially
+                        CommunityMapView(
+                            members: filteredMembers,
+                            searchText: $searchText
+                        )
                     }
                 }
             }
@@ -704,9 +746,301 @@ struct CommunityAddNoteSheet: View {
     }
 }
 
+// MARK: - Community Map View
+/// See your community spatially - where are your people?
+struct CommunityMapView: View {
+    let members: [CampMember]
+    @Binding var searchText: String
+    @EnvironmentObject var locationManager: LocationManager
+    @State private var selectedMember: CampMember?
+    
+    // Black Rock City center coordinates (approximate)
+    private let brcCenter = (lat: 40.7864, lon: -119.2065)
+    
+    var body: some View {
+        ZStack {
+            // Map background
+            Theme.Colors.backgroundDark
+            
+            // Playa grid visualization (simplified)
+            GeometryReader { geometry in
+                ZStack {
+                    // Grid lines
+                    PlayaGridOverlay()
+                    
+                    // Member pins (show all members, use hash-based position if no GPS)
+                    ForEach(members) { member in
+                        MemberMapPin(
+                            member: member,
+                            isSelected: selectedMember?.id == member.id,
+                            geometry: geometry
+                        )
+                        .onTapGesture {
+                            selectedMember = member
+                        }
+                    }
+                    
+                    // My location indicator
+                    if locationManager.location != nil {
+                        MyLocationIndicator(geometry: geometry)
+                    }
+                }
+            }
+            
+            // Selected member card overlay
+            if let member = selectedMember {
+                VStack {
+                    Spacer()
+                    
+                    SelectedMemberCard(member: member) {
+                        selectedMember = nil
+                    }
+                    .padding()
+                }
+            }
+            
+            // Legend
+            VStack {
+                HStack {
+                    Spacer()
+                    MapLegend()
+                        .padding()
+                }
+                Spacer()
+            }
+        }
+    }
+}
+
+// MARK: - Playa Grid Overlay
+struct PlayaGridOverlay: View {
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                // Radial lines (streets from center)
+                ForEach(0..<12, id: \.self) { i in
+                    Path { path in
+                        let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height * 0.7)
+                        let angle = Double(i) * 30 * .pi / 180
+                        let endX = center.x + cos(angle) * geometry.size.width
+                        let endY = center.y - sin(angle) * geometry.size.width
+                        path.move(to: center)
+                        path.addLine(to: CGPoint(x: endX, y: endY))
+                    }
+                    .stroke(Theme.Colors.robotCream.opacity(0.1), lineWidth: 1)
+                }
+                
+                // Concentric arcs (lettered streets)
+                ForEach(1..<8, id: \.self) { i in
+                    Circle()
+                        .stroke(Theme.Colors.robotCream.opacity(0.1), lineWidth: 1)
+                        .frame(width: CGFloat(i) * 80, height: CGFloat(i) * 80)
+                        .position(x: geometry.size.width / 2, y: geometry.size.height * 0.7)
+                }
+                
+                // Center point (The Man)
+                Circle()
+                    .fill(Theme.Colors.sunsetOrange)
+                    .frame(width: 12, height: 12)
+                    .position(x: geometry.size.width / 2, y: geometry.size.height * 0.7)
+                
+                Text("🔥")
+                    .font(.system(size: 20))
+                    .position(x: geometry.size.width / 2, y: geometry.size.height * 0.7 - 20)
+            }
+        }
+    }
+}
+
+// MARK: - Member Map Pin
+struct MemberMapPin: View {
+    let member: CampMember
+    let isSelected: Bool
+    let geometry: GeometryProxy
+    
+    // Convert member location to screen position (simplified)
+    var position: CGPoint {
+        // In production, use real GPS coordinates
+        // For now, distribute members around the playa
+        let hash = abs(member.id.hashValue)
+        let angle = Double(hash % 360) * .pi / 180
+        let distance = CGFloat(50 + (hash % 200))
+        
+        let centerX = geometry.size.width / 2
+        let centerY = geometry.size.height * 0.7
+        
+        return CGPoint(
+            x: centerX + Foundation.cos(angle) * Double(distance),
+            y: centerY - Foundation.sin(angle) * Double(distance)
+        )
+    }
+    
+    var body: some View {
+        ZStack {
+            // Pin
+            Circle()
+                .fill(member.isOnline ? Theme.Colors.connected : Theme.Colors.backgroundLight)
+                .frame(width: isSelected ? 40 : 28, height: isSelected ? 40 : 28)
+                .overlay(
+                    Text(String(member.name.prefix(2)).uppercased())
+                        .font(.system(size: isSelected ? 14 : 10, weight: .bold))
+                        .foregroundColor(member.isOnline ? .white : Theme.Colors.robotCream)
+                )
+                .shadow(color: member.isOnline ? Theme.Colors.connected.opacity(0.5) : .clear, radius: 4)
+            
+            // Selection ring
+            if isSelected {
+                Circle()
+                    .stroke(Theme.Colors.sunsetOrange, lineWidth: 3)
+                    .frame(width: 48, height: 48)
+            }
+        }
+        .position(position)
+        .animation(.spring(), value: isSelected)
+    }
+}
+
+// MARK: - My Location Indicator
+struct MyLocationIndicator: View {
+    let geometry: GeometryProxy
+    
+    var body: some View {
+        ZStack {
+            // Pulsing ring
+            Circle()
+                .stroke(Theme.Colors.turquoise.opacity(0.3), lineWidth: 2)
+                .frame(width: 40, height: 40)
+            
+            // Center dot
+            Circle()
+                .fill(Theme.Colors.turquoise)
+                .frame(width: 16, height: 16)
+            
+            // Inner white dot
+            Circle()
+                .fill(.white)
+                .frame(width: 6, height: 6)
+        }
+        .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+    }
+}
+
+// MARK: - Selected Member Card
+struct SelectedMemberCard: View {
+    let member: CampMember
+    let onDismiss: () -> Void
+    
+    var body: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            HStack {
+                // Avatar
+                Circle()
+                    .fill(member.isOnline ? Theme.Colors.connected : Theme.Colors.backgroundLight)
+                    .frame(width: 50, height: 50)
+                    .overlay(
+                        Text(String(member.name.prefix(2)).uppercased())
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(member.isOnline ? .white : Theme.Colors.robotCream)
+                    )
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(member.name)
+                        .font(Theme.Typography.headline)
+                        .foregroundColor(Theme.Colors.robotCream)
+                    
+                    HStack(spacing: Theme.Spacing.xs) {
+                        Circle()
+                            .fill(member.isOnline ? Theme.Colors.connected : Theme.Colors.disconnected)
+                            .frame(width: 8, height: 8)
+                        Text(member.isOnline ? "Online" : "Offline")
+                            .font(Theme.Typography.caption)
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                    }
+                }
+                
+                Spacer()
+                
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                }
+            }
+            
+            // Action buttons
+            HStack(spacing: Theme.Spacing.md) {
+                NavigationLink(destination: CommunityMemberDetailView(member: member)) {
+                    HStack {
+                        Image(systemName: "person.fill")
+                        Text("Profile")
+                    }
+                    .font(Theme.Typography.callout)
+                    .foregroundColor(Theme.Colors.robotCream)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Theme.Colors.backgroundLight)
+                    .cornerRadius(Theme.CornerRadius.md)
+                }
+                
+                Button(action: {
+                    // TODO: Navigate to member
+                }) {
+                    HStack {
+                        Image(systemName: "location.fill")
+                        Text("Navigate")
+                    }
+                    .font(Theme.Typography.callout)
+                    .foregroundColor(Theme.Colors.backgroundDark)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Theme.Colors.turquoise)
+                    .cornerRadius(Theme.CornerRadius.md)
+                }
+            }
+        }
+        .padding()
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.lg)
+    }
+}
+
+// MARK: - Map Legend
+struct MapLegend: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+            HStack(spacing: Theme.Spacing.xs) {
+                Circle()
+                    .fill(Theme.Colors.connected)
+                    .frame(width: 10, height: 10)
+                Text("Online")
+                    .font(Theme.Typography.caption)
+            }
+            HStack(spacing: Theme.Spacing.xs) {
+                Circle()
+                    .fill(Theme.Colors.backgroundLight)
+                    .frame(width: 10, height: 10)
+                Text("Offline")
+                    .font(Theme.Typography.caption)
+            }
+            HStack(spacing: Theme.Spacing.xs) {
+                Circle()
+                    .fill(Theme.Colors.turquoise)
+                    .frame(width: 10, height: 10)
+                Text("You")
+                    .font(Theme.Typography.caption)
+            }
+        }
+        .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+        .padding(Theme.Spacing.sm)
+        .background(Theme.Colors.backgroundDark.opacity(0.8))
+        .cornerRadius(Theme.CornerRadius.sm)
+    }
+}
+
 #Preview {
     CommunityHubView()
         .environmentObject(MeshtasticManager())
         .environmentObject(ProfileManager())
         .environmentObject(SocialManager())
+        .environmentObject(LocationManager())
 }

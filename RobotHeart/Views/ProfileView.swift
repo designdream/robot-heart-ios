@@ -4,6 +4,7 @@ import PhotosUI
 // MARK: - Profile View
 struct ProfileView: View {
     @EnvironmentObject var profileManager: ProfileManager
+    @EnvironmentObject var locationManager: LocationManager
     @State private var showingEditProfile = false
     @State private var showingScanner = false
     
@@ -35,6 +36,9 @@ struct ProfileView: View {
                             .background(Theme.Colors.turquoise)
                             .cornerRadius(Theme.CornerRadius.md)
                         }
+                        
+                        // GHOST MODE - Easy access toggle for privacy
+                        GhostModeToggle()
                         
                         // SECTION 2: YOUR BURN STORY - Identity in the community
                         // (Moved from Home - this is identity, not action)
@@ -337,6 +341,59 @@ struct MyConnectionsCard: View {
         .padding()
         .background(Theme.Colors.backgroundMedium)
         .cornerRadius(Theme.CornerRadius.lg)
+    }
+}
+
+// MARK: - Ghost Mode Toggle
+/// Easy access privacy toggle - prominent in Me tab
+struct GhostModeToggle: View {
+    @EnvironmentObject var locationManager: LocationManager
+    
+    var body: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            // Ghost icon
+            ZStack {
+                Circle()
+                    .fill(locationManager.isLocationPrivate ? Theme.Colors.backgroundLight : Theme.Colors.turquoise.opacity(0.15))
+                    .frame(width: 44, height: 44)
+                
+                Image(systemName: locationManager.isLocationPrivate ? "eye.slash.fill" : "eye.fill")
+                    .font(.title3)
+                    .foregroundColor(locationManager.isLocationPrivate ? Theme.Colors.robotCream : Theme.Colors.turquoise)
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Ghost Mode")
+                    .font(Theme.Typography.callout)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.robotCream)
+                
+                Text(locationManager.isLocationPrivate ? "Your location is hidden" : "Others can see where you are")
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+            }
+            
+            Spacer()
+            
+            Toggle("", isOn: Binding(
+                get: { locationManager.isLocationPrivate },
+                set: { newValue in
+                    if newValue {
+                        locationManager.enableGhostMode()
+                    } else {
+                        locationManager.disableGhostMode()
+                    }
+                }
+            ))
+            .tint(Theme.Colors.turquoise)
+        }
+        .padding()
+        .background(locationManager.isLocationPrivate ? Theme.Colors.backgroundLight : Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.lg)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                .stroke(locationManager.isLocationPrivate ? Theme.Colors.robotCream.opacity(0.3) : Color.clear, lineWidth: 1)
+        )
     }
 }
 
