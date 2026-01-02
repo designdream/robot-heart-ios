@@ -9,6 +9,7 @@ struct ShiftsView: View {
     @State private var showingAdminView = false
     @State private var showingAddTask = false
     @State private var showingOpportunities = false
+    @State private var showingCampMap = false
     
     // Calculate total commitments
     var totalCommitments: Int {
@@ -65,9 +66,9 @@ struct ShiftsView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: Theme.Spacing.sm) {
-                        // Contribute (unified view - replaces chart icon)
-                        Button(action: { showingOpportunities = true }) {
-                            Image(systemName: "hand.raised.fill")
+                        // Camp Map
+                        Button(action: { showingCampMap = true }) {
+                            Image(systemName: "map.fill")
                                 .foregroundColor(Theme.Colors.turquoise)
                         }
                         
@@ -91,6 +92,9 @@ struct ShiftsView: View {
             }
             .sheet(isPresented: $showingOpportunities) {
                 ContributeView()
+            }
+            .sheet(isPresented: $showingCampMap) {
+                CampBrowserView()
             }
             .onAppear {
                 economyManager.refreshAvailableShifts()
