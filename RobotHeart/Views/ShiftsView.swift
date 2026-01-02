@@ -8,7 +8,20 @@ struct ShiftsView: View {
     @EnvironmentObject var taskManager: TaskManager
     @State private var showingAdminView = false
     @State private var showingAddTask = false
-    @State private var selectedTab = 0  // 0 = Shifts, 1 = Tasks
+    @State private var showingOpportunities = false
+    
+    // Calculate total commitments
+    var totalCommitments: Int {
+        shiftManager.myShifts.count + taskManager.myTasks.count
+    }
+    
+    // Calculate upcoming commitments (next 24 hours)
+    var urgentCommitments: Int {
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+        let urgentShifts = shiftManager.myShifts.filter { $0.startTime < tomorrow && $0.startTime > Date() }
+        let urgentTasks = taskManager.myTasks.filter { $0.priority == .high }
+        return urgentShifts.count + urgentTasks.count
+    }
     
     var body: some View {
         NavigationView {
@@ -16,31 +29,43 @@ struct ShiftsView: View {
                 Theme.Colors.backgroundDark.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // POINTS CARD - Primary incentive at top (always visible)
-                    ShiftPointsCard()
-                        .padding(.horizontal)
-                        .padding(.top)
-                    
-                    // Segmented control for Shifts vs Tasks
-                    Picker("View", selection: $selectedTab) {
-                        Text("Shifts").tag(0)
-                        Text("Tasks (\(taskManager.openTasksCount))").tag(1)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding()
-                    
-                    // Content based on selected tab
-                    if selectedTab == 0 {
-                        shiftsContent
-                    } else {
-                        tasksContent
+                    // My Commitments - Primary view
+                    ScrollView {
+                        VStack(spacing: Theme.Spacing.lg) {
+                            // Status Card - What you need to do NOW
+                            MyCommitmentsStatusCard(
+                                totalCommitments: totalCommitments,
+                                urgentCount: urgentCommitments
+                            )
+                            
+                            // Active/Current commitment (if any)
+                            if let activeShift = shiftManager.activeShifts.first {
+                                ActiveCommitmentCard(shift: activeShift)
+                            }
+                            
+                            // Today's commitments
+                            TodaysCommitmentsSection()
+                            
+                            // Upcoming commitments (easy to read list)
+                            UpcomingCommitmentsSection()
+                            
+                            // Browse opportunities CTA
+                            OpportunitiesCTACard(
+                                availableShifts: economyManager.availableShifts.count,
+                                availableTasks: taskManager.openTasksCount,
+                                potentialPoints: potentialPoints
+                            ) {
+                                showingOpportunities = true
+                            }
+                        }
+                        .padding()
                     }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("Shifts")
+                    Text("My Burn")
                         .font(Theme.Typography.title2)
                         .foregroundColor(Theme.Colors.robotCream)
                 }
@@ -71,10 +96,20 @@ struct ShiftsView: View {
             .sheet(isPresented: $showingAddTask) {
                 AddTaskView(preselectedArea: nil)
             }
+            .sheet(isPresented: $showingOpportunities) {
+                OpportunitiesMarketplaceView()
+            }
             .onAppear {
                 economyManager.refreshAvailableShifts()
             }
         }
+    }
+    
+    var potentialPoints: Int {
+        let shiftPoints = economyManager.availableShifts.reduce(0) { $0 + $1.totalPoints }
+        let taskPoints = taskManager.tasks.filter { $0.status == .open && $0.assignedTo == nil }
+            .reduce(0) { $0 + $1.pointsValue }
+        return shiftPoints + taskPoints
     }
     
     // MARK: - Shifts Content
@@ -886,8 +921,736 @@ struct NoShiftsView: View {
     }
 }
 
+// MARK: - My Commitments Status Card
+struct MyCommitmentsStatusCard: View {
+    @EnvironmentObject var economyManager: EconomyManager
+    let totalCommitments: Int
+    let urgentCount: Int
+    
+    var body: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("YOUR CONTRIBUTION")
+                        .font(Theme.Typography.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                        .tracking(0.5)
+                    
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text("\(economyManager.myStanding.pointsEarned)")
+                            .font(.system(size: 42, weight: .bold, design: .rounded))
+                            .foregroundColor(Theme.Colors.sunsetOrange)
+                        
+                        Text("Social Capital")
+                            .font(Theme.Typography.callout)
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                    }
+                }
+                
+                Spacer()
+                
+                // Trust level badge
+                VStack(spacing: 4) {
+                    Image(systemName: trustIcon)
+                        .font(.system(size: 28))
+                        .foregroundColor(trustColor)
+                    Text(trustLevel)
+                        .font(Theme.Typography.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(trustColor)
+                }
+                .padding(Theme.Spacing.sm)
+                .background(trustColor.opacity(0.15))
+                .cornerRadius(Theme.CornerRadius.md)
+            }
+            
+            // Commitments summary
+            if totalCommitments > 0 {
+                HStack(spacing: Theme.Spacing.lg) {
+                    CommitmentStat(
+                        value: "\(totalCommitments)",
+                        label: "Commitments",
+                        icon: "checkmark.circle.fill",
+                        color: Theme.Colors.turquoise
+                    )
+                    
+                    if urgentCount > 0 {
+                        CommitmentStat(
+                            value: "\(urgentCount)",
+                            label: "Coming Up",
+                            icon: "clock.fill",
+                            color: Theme.Colors.goldenYellow
+                        )
+                    }
+                    
+                    CommitmentStat(
+                        value: "#\(myRank)",
+                        label: "Camp Rank",
+                        icon: "trophy.fill",
+                        color: myRank <= 3 ? Theme.Colors.goldenYellow : Theme.Colors.robotCream.opacity(0.6)
+                    )
+                }
+            } else {
+                // No commitments yet - motivational message
+                HStack {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(Theme.Colors.goldenYellow)
+                    Text("Ready to contribute? Browse opportunities below!")
+                        .font(Theme.Typography.callout)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.8))
+                }
+                .padding(Theme.Spacing.sm)
+                .frame(maxWidth: .infinity)
+                .background(Theme.Colors.goldenYellow.opacity(0.1))
+                .cornerRadius(Theme.CornerRadius.sm)
+            }
+        }
+        .padding(Theme.Spacing.lg)
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.lg)
+    }
+    
+    var myRank: Int {
+        economyManager.leaderboard.first { $0.isMe }?.rank ?? 1
+    }
+    
+    var trustLevel: String {
+        let score = economyManager.myStanding.reliabilityScore
+        if score >= 0.9 { return "Legendary" }
+        if score >= 0.8 { return "Superstar" }
+        if score >= 0.7 { return "Reliable" }
+        if score >= 0.5 { return "Contributing" }
+        return "New"
+    }
+    
+    var trustIcon: String {
+        let score = economyManager.myStanding.reliabilityScore
+        if score >= 0.9 { return "star.circle.fill" }
+        if score >= 0.8 { return "star.fill" }
+        if score >= 0.7 { return "checkmark.seal.fill" }
+        return "person.crop.circle.fill"
+    }
+    
+    var trustColor: Color {
+        let score = economyManager.myStanding.reliabilityScore
+        if score >= 0.9 { return Theme.Colors.goldenYellow }
+        if score >= 0.8 { return Theme.Colors.sunsetOrange }
+        if score >= 0.7 { return Theme.Colors.turquoise }
+        return Theme.Colors.robotCream.opacity(0.6)
+    }
+}
+
+// MARK: - Commitment Stat
+struct CommitmentStat: View {
+    let value: String
+    let label: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(color)
+            Text(value)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundColor(Theme.Colors.robotCream)
+            Text(label)
+                .font(.system(size: 10))
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Active Commitment Card
+struct ActiveCommitmentCard: View {
+    let shift: Shift
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            HStack {
+                Label("HAPPENING NOW", systemImage: "bolt.fill")
+                    .font(Theme.Typography.caption)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.Colors.connected)
+                Spacer()
+                Text(timeRemaining)
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+            }
+            
+            HStack(spacing: Theme.Spacing.md) {
+                Image(systemName: shift.location.icon)
+                    .font(.title)
+                    .foregroundColor(Theme.Colors.sunsetOrange)
+                    .frame(width: 50, height: 50)
+                    .background(Theme.Colors.sunsetOrange.opacity(0.2))
+                    .cornerRadius(Theme.CornerRadius.md)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(shift.location.rawValue)
+                        .font(Theme.Typography.headline)
+                        .foregroundColor(Theme.Colors.robotCream)
+                    
+                    Text(shift.notes ?? "General")
+                        .font(Theme.Typography.body)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                }
+                
+                Spacer()
+                
+                // Points badge
+                VStack {
+                    Text("+\(pointsForLocation(shift.location))")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(Theme.Colors.sunsetOrange)
+                    Text("pts")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                }
+            }
+        }
+        .padding(Theme.Spacing.lg)
+        .background(
+            LinearGradient(
+                colors: [Theme.Colors.connected.opacity(0.2), Theme.Colors.backgroundMedium],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .cornerRadius(Theme.CornerRadius.lg)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                .stroke(Theme.Colors.connected.opacity(0.3), lineWidth: 1)
+        )
+    }
+    
+    var timeRemaining: String {
+        let remaining = shift.endTime.timeIntervalSince(Date())
+        let hours = Int(remaining) / 3600
+        let minutes = (Int(remaining) % 3600) / 60
+        if hours > 0 {
+            return "\(hours)h \(minutes)m left"
+        }
+        return "\(minutes)m left"
+    }
+    
+    func pointsForLocation(_ location: Shift.ShiftLocation) -> Int {
+        switch location {
+        case .bus: return ShiftEconomy.PointValues.busShift
+        case .shadyBot: return ShiftEconomy.PointValues.shadyBotShift
+        case .camp: return ShiftEconomy.PointValues.campShift
+        }
+    }
+}
+
+// MARK: - Today's Commitments Section
+struct TodaysCommitmentsSection: View {
+    @EnvironmentObject var shiftManager: ShiftManager
+    @EnvironmentObject var taskManager: TaskManager
+    
+    var todaysShifts: [Shift] {
+        let calendar = Calendar.current
+        return shiftManager.myShifts.filter { calendar.isDateInToday($0.startTime) }
+    }
+    
+    var todaysTasks: [AdHocTask] {
+        taskManager.myTasks.filter { $0.priority == .high }
+    }
+    
+    var body: some View {
+        if !todaysShifts.isEmpty || !todaysTasks.isEmpty {
+            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                Text("TODAY")
+                    .font(Theme.Typography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    .tracking(0.5)
+                
+                ForEach(todaysShifts) { shift in
+                    ShiftCommitmentRow(
+                        icon: shift.location.icon,
+                        title: shift.location.rawValue,
+                        subtitle: formatTime(shift.startTime),
+                        points: pointsForLocation(shift.location),
+                        type: .shift,
+                        isUrgent: shift.startTime < Date().addingTimeInterval(3600)
+                    )
+                }
+                
+                ForEach(todaysTasks) { task in
+                    ShiftCommitmentRow(
+                        icon: "checkmark.circle",
+                        title: task.title,
+                        subtitle: task.priority.shortLabel,
+                        points: task.priority.points,
+                        type: .task,
+                        isUrgent: task.priority == .high
+                    )
+                }
+            }
+        }
+    }
+    
+    func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: date)
+    }
+    
+    func pointsForLocation(_ location: Shift.ShiftLocation) -> Int {
+        switch location {
+        case .bus: return ShiftEconomy.PointValues.busShift
+        case .shadyBot: return ShiftEconomy.PointValues.shadyBotShift
+        case .camp: return ShiftEconomy.PointValues.campShift
+        }
+    }
+}
+
+// MARK: - Upcoming Commitments Section
+struct UpcomingCommitmentsSection: View {
+    @EnvironmentObject var shiftManager: ShiftManager
+    @EnvironmentObject var taskManager: TaskManager
+    
+    var upcomingShifts: [Shift] {
+        let calendar = Calendar.current
+        return shiftManager.myShifts
+            .filter { !calendar.isDateInToday($0.startTime) && $0.startTime > Date() }
+            .sorted { $0.startTime < $1.startTime }
+            .prefix(5)
+            .map { $0 }
+    }
+    
+    var body: some View {
+        if !upcomingShifts.isEmpty {
+            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                Text("UPCOMING")
+                    .font(Theme.Typography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    .tracking(0.5)
+                
+                ForEach(upcomingShifts) { shift in
+                    ShiftCommitmentRow(
+                        icon: shift.location.icon,
+                        title: shift.location.rawValue,
+                        subtitle: formatDate(shift.startTime),
+                        points: pointsForLocation(shift.location),
+                        type: .shift,
+                        isUrgent: false
+                    )
+                }
+            }
+        }
+    }
+    
+    func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE, MMM d 'at' h:mm a"
+        return formatter.string(from: date)
+    }
+    
+    func pointsForLocation(_ location: Shift.ShiftLocation) -> Int {
+        switch location {
+        case .bus: return ShiftEconomy.PointValues.busShift
+        case .shadyBot: return ShiftEconomy.PointValues.shadyBotShift
+        case .camp: return ShiftEconomy.PointValues.campShift
+        }
+    }
+}
+
+// MARK: - Shift Commitment Row
+struct ShiftCommitmentRow: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let points: Int
+    let type: ShiftCommitmentType
+    let isUrgent: Bool
+    
+    enum ShiftCommitmentType {
+        case shift, task
+    }
+    
+    var body: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            // Icon
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(type == .shift ? Theme.Colors.turquoise : Theme.Colors.sunsetOrange)
+                .frame(width: 40, height: 40)
+                .background((type == .shift ? Theme.Colors.turquoise : Theme.Colors.sunsetOrange).opacity(0.15))
+                .cornerRadius(Theme.CornerRadius.sm)
+            
+            // Details
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(title)
+                        .font(Theme.Typography.callout)
+                        .fontWeight(.medium)
+                        .foregroundColor(Theme.Colors.robotCream)
+                    
+                    if isUrgent {
+                        Text("SOON")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(Theme.Colors.backgroundDark)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Theme.Colors.goldenYellow)
+                            .cornerRadius(4)
+                    }
+                }
+                
+                Text(subtitle)
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+            }
+            
+            Spacer()
+            
+            // Points
+            Text("+\(points)")
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundColor(Theme.Colors.sunsetOrange)
+        }
+        .padding(Theme.Spacing.md)
+        .background(Theme.Colors.backgroundLight)
+        .cornerRadius(Theme.CornerRadius.md)
+    }
+}
+
+// MARK: - Opportunities CTA Card
+struct OpportunitiesCTACard: View {
+    let availableShifts: Int
+    let availableTasks: Int
+    let potentialPoints: Int
+    let action: () -> Void
+    
+    var totalOpportunities: Int {
+        availableShifts + availableTasks
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: Theme.Spacing.md) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("GROW YOUR IMPACT")
+                            .font(Theme.Typography.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(Theme.Colors.goldenYellow)
+                            .tracking(0.5)
+                        
+                        Text("Browse Opportunities")
+                            .font(Theme.Typography.headline)
+                            .foregroundColor(Theme.Colors.robotCream)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.title)
+                        .foregroundColor(Theme.Colors.sunsetOrange)
+                }
+                
+                if totalOpportunities > 0 {
+                    HStack(spacing: Theme.Spacing.lg) {
+                        if availableShifts > 0 {
+                            Label("\(availableShifts) shifts", systemImage: "calendar")
+                                .font(Theme.Typography.caption)
+                                .foregroundColor(Theme.Colors.turquoise)
+                        }
+                        
+                        if availableTasks > 0 {
+                            Label("\(availableTasks) tasks", systemImage: "checkmark.circle")
+                                .font(Theme.Typography.caption)
+                                .foregroundColor(Theme.Colors.sunsetOrange)
+                        }
+                        
+                        Spacer()
+                        
+                        Text("+\(potentialPoints) pts available")
+                            .font(Theme.Typography.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(Theme.Colors.goldenYellow)
+                    }
+                } else {
+                    Text("Check back later for new opportunities")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                }
+            }
+            .padding(Theme.Spacing.lg)
+            .background(
+                LinearGradient(
+                    colors: [Theme.Colors.sunsetOrange.opacity(0.15), Theme.Colors.backgroundMedium],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .cornerRadius(Theme.CornerRadius.lg)
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                    .stroke(Theme.Colors.sunsetOrange.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Opportunities Marketplace View
+struct OpportunitiesMarketplaceView: View {
+    @EnvironmentObject var economyManager: EconomyManager
+    @EnvironmentObject var taskManager: TaskManager
+    @EnvironmentObject var shiftManager: ShiftManager
+    @Environment(\.dismiss) var dismiss
+    @State private var selectedTab = 0
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Theme.Colors.backgroundDark.ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Motivational header
+                    VStack(spacing: Theme.Spacing.sm) {
+                        Text("Every contribution matters")
+                            .font(Theme.Typography.headline)
+                            .foregroundColor(Theme.Colors.robotCream)
+                        Text("Build your legacy. Earn Social Capital. Be remembered.")
+                            .font(Theme.Typography.caption)
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Theme.Colors.backgroundMedium)
+                    
+                    // Tabs
+                    Picker("Type", selection: $selectedTab) {
+                        Text("Shifts (\(economyManager.availableShifts.count))").tag(0)
+                        Text("Tasks (\(taskManager.openTasksCount))").tag(1)
+                    }
+                    .pickerStyle(.segmented)
+                    .padding()
+                    
+                    // Content
+                    ScrollView {
+                        LazyVStack(spacing: Theme.Spacing.md) {
+                            if selectedTab == 0 {
+                                shiftsMarketplace
+                            } else {
+                                tasksMarketplace
+                            }
+                        }
+                        .padding()
+                    }
+                }
+            }
+            .navigationTitle("Opportunities")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(Theme.Colors.sunsetOrange)
+                }
+            }
+        }
+    }
+    
+    var shiftsMarketplace: some View {
+        Group {
+            if economyManager.availableShifts.isEmpty {
+                emptyState(
+                    icon: "calendar.badge.checkmark",
+                    title: "All shifts claimed!",
+                    message: "Check back later or ask an admin about upcoming shifts."
+                )
+            } else {
+                ForEach(economyManager.availableShifts) { shift in
+                    OpportunityShiftCard(shift: shift)
+                }
+            }
+        }
+    }
+    
+    var tasksMarketplace: some View {
+        Group {
+            let openTasks = taskManager.tasks.filter { $0.status == .open && $0.assignedTo == nil }
+            if openTasks.isEmpty {
+                emptyState(
+                    icon: "checkmark.circle",
+                    title: "All tasks handled!",
+                    message: "The camp is running smoothly. Check back later."
+                )
+            } else {
+                ForEach(openTasks) { task in
+                    OpportunityTaskCard(task: task)
+                }
+            }
+        }
+    }
+    
+    func emptyState(icon: String, title: String, message: String) -> some View {
+        VStack(spacing: Theme.Spacing.md) {
+            Image(systemName: icon)
+                .font(.system(size: 48))
+                .foregroundColor(Theme.Colors.connected)
+            Text(title)
+                .font(Theme.Typography.headline)
+                .foregroundColor(Theme.Colors.robotCream)
+            Text(message)
+                .font(Theme.Typography.body)
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                .multilineTextAlignment(.center)
+        }
+        .padding(.top, 60)
+    }
+}
+
+// MARK: - Opportunity Shift Card
+struct OpportunityShiftCard: View {
+    @EnvironmentObject var economyManager: EconomyManager
+    let shift: AnonymousShift
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            HStack {
+                Image(systemName: shift.location.icon)
+                    .font(.title2)
+                    .foregroundColor(Theme.Colors.turquoise)
+                    .frame(width: 44, height: 44)
+                    .background(Theme.Colors.turquoise.opacity(0.15))
+                    .cornerRadius(Theme.CornerRadius.md)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(shift.location.rawValue)
+                        .font(Theme.Typography.headline)
+                        .foregroundColor(Theme.Colors.robotCream)
+                    
+                    Text(formatDate(shift.startTime))
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing) {
+                    Text("+\(shift.totalPoints)")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundColor(Theme.Colors.sunsetOrange)
+                    Text("pts")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                }
+            }
+            
+            // Claim button
+            Button(action: {
+                economyManager.claimShift(shift)
+            }) {
+                Text("Claim This Shift")
+                    .font(Theme.Typography.callout)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.backgroundDark)
+                    .frame(maxWidth: .infinity)
+                    .padding(Theme.Spacing.sm)
+                    .background(Theme.Colors.turquoise)
+                    .cornerRadius(Theme.CornerRadius.md)
+            }
+        }
+        .padding(Theme.Spacing.lg)
+        .background(Theme.Colors.backgroundLight)
+        .cornerRadius(Theme.CornerRadius.lg)
+    }
+    
+    func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE, MMM d 'at' h:mm a"
+        return formatter.string(from: date)
+    }
+}
+
+// MARK: - Opportunity Task Card
+struct OpportunityTaskCard: View {
+    @EnvironmentObject var taskManager: TaskManager
+    let task: AdHocTask
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            HStack {
+                // Priority indicator
+                Circle()
+                    .fill(priorityColor)
+                    .frame(width: 12, height: 12)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(task.title)
+                        .font(Theme.Typography.headline)
+                        .foregroundColor(Theme.Colors.robotCream)
+                    
+                    HStack(spacing: Theme.Spacing.sm) {
+                        Text(task.priority.shortLabel)
+                        Text("•")
+                        Text(task.status.rawValue)
+                    }
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing) {
+                    Text("+\(task.pointsValue)")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundColor(Theme.Colors.sunsetOrange)
+                    Text("pts")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                }
+            }
+            
+            if let description = task.description {
+                Text(description)
+                    .font(Theme.Typography.body)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                    .lineLimit(2)
+            }
+            
+            // Claim button
+            Button(action: {
+                taskManager.claimTask(task.id, memberName: "Me")
+            }) {
+                Text("I'll Do This")
+                    .font(Theme.Typography.callout)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.backgroundDark)
+                    .frame(maxWidth: .infinity)
+                    .padding(Theme.Spacing.sm)
+                    .background(Theme.Colors.sunsetOrange)
+                    .cornerRadius(Theme.CornerRadius.md)
+            }
+        }
+        .padding(Theme.Spacing.lg)
+        .background(Theme.Colors.backgroundLight)
+        .cornerRadius(Theme.CornerRadius.lg)
+    }
+    
+    var priorityColor: Color {
+        switch task.priority {
+        case .high: return Theme.Colors.emergency
+        case .medium: return Theme.Colors.warning
+        case .low: return Theme.Colors.turquoise
+        }
+    }
+}
+
 #Preview {
     ShiftsView()
         .environmentObject(ShiftManager())
         .environmentObject(MeshtasticManager())
+        .environmentObject(EconomyManager())
+        .environmentObject(DraftManager())
+        .environmentObject(TaskManager())
 }
