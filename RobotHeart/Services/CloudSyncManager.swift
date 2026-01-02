@@ -81,7 +81,8 @@ class CloudSyncManager: ObservableObject {
     private let campRecordType = "Camp"
     
     init(localData: LocalDataManager = .shared) {
-        self.container = CKContainer(identifier: "iCloud.com.robotheart.app")
+        // Use default container to avoid crash when iCloud not configured
+        self.container = CKContainer.default()
         self.privateDatabase = container.privateCloudDatabase
         self.localData = localData
         self.networkMonitor = NWPathMonitor()
