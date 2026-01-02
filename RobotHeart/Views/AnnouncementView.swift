@@ -51,54 +51,88 @@ struct AnnouncementsListView: View {
     @EnvironmentObject var announcementManager: AnnouncementManager
     @EnvironmentObject var shiftManager: ShiftManager
     @State private var showingCreateSheet = false
+    @State private var showingHistory = false
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                Theme.Colors.backgroundDark.ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: Theme.Spacing.md) {
-                        if announcementManager.activeAnnouncements.isEmpty {
-                            EmptyAnnouncementsView()
-                        } else {
-                            ForEach(announcementManager.activeAnnouncements) { announcement in
-                                AnnouncementCard(announcement: announcement)
-                                    .onTapGesture {
-                                        announcementManager.markAsRead(announcement)
-                                    }
+        ZStack {
+            Theme.Colors.backgroundDark.ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: Theme.Spacing.md) {
+                    // Active announcements
+                    if announcementManager.activeAnnouncements.isEmpty {
+                        EmptyAnnouncementsView()
+                    } else {
+                        ForEach(announcementManager.activeAnnouncements) { announcement in
+                            AnnouncementCard(announcement: announcement)
+                        }
+                    }
+                    
+                    // History section
+                    if !announcementManager.dismissedAnnouncements.isEmpty {
+                        Button(action: { showingHistory.toggle() }) {
+                            HStack {
+                                Image(systemName: "clock.arrow.circlepath")
+                                Text("View History (\(announcementManager.dismissedAnnouncements.count))")
+                                Spacer()
+                                Image(systemName: showingHistory ? "chevron.up" : "chevron.down")
+                            }
+                            .font(Theme.Typography.callout)
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                            .padding()
+                            .background(Theme.Colors.backgroundMedium)
+                            .cornerRadius(Theme.CornerRadius.md)
+                        }
+                        
+                        if showingHistory {
+                            ForEach(announcementManager.dismissedAnnouncements) { announcement in
+                                HistoryAnnouncementRow(announcement: announcement)
                             }
                         }
                     }
-                    .padding()
                 }
+                .padding()
             }
-            .navigationTitle("Announcements")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+        }
+        .navigationTitle("Announcements")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
                     if shiftManager.isAdmin {
                         Button(action: { showingCreateSheet = true }) {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundColor(Theme.Colors.sunsetOrange)
+                            Label("New Announcement", systemImage: "plus")
                         }
                     }
-                }
-                
-                ToolbarItem(placement: .navigationBarLeading) {
+                    
                     if announcementManager.unreadCount > 0 {
-                        Button("Mark All Read") {
-                            announcementManager.markAllAsRead()
+                        Button(action: { announcementManager.markAllAsRead() }) {
+                            Label("Mark All Read", systemImage: "checkmark.circle")
                         }
-                        .font(Theme.Typography.caption)
-                        .foregroundColor(Theme.Colors.turquoise)
                     }
+                    
+                    let readCount = announcementManager.announcements.filter { $0.readBy.contains("!local") }.count
+                    if readCount > 0 {
+                        Button(action: { announcementManager.dismissAllRead() }) {
+                            Label("Clear Read", systemImage: "trash")
+                        }
+                    }
+                    
+                    if !announcementManager.dismissedAnnouncements.isEmpty {
+                        Divider()
+                        Button(role: .destructive, action: { announcementManager.clearHistory() }) {
+                            Label("Clear History", systemImage: "trash.fill")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .foregroundColor(Theme.Colors.sunsetOrange)
                 }
             }
-            .sheet(isPresented: $showingCreateSheet) {
-                CreateAnnouncementView()
-                    .environmentObject(announcementManager)
-            }
+        }
+        .sheet(isPresented: $showingCreateSheet) {
+            CreateAnnouncementView()
+                .environmentObject(announcementManager)
         }
     }
 }
@@ -129,6 +163,16 @@ struct AnnouncementCard: View {
                         .fill(Theme.Colors.sunsetOrange)
                         .frame(width: 8, height: 8)
                 }
+                
+                // Dismiss button
+                Button(action: {
+                    withAnimation {
+                        announcementManager.dismissAnnouncement(announcement)
+                    }
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+                }
             }
             
             Text(announcement.message)
@@ -154,6 +198,45 @@ struct AnnouncementCard: View {
             RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
                 .stroke(priorityColor.opacity(isUnread ? 0.5 : 0), lineWidth: 1)
         )
+        .onTapGesture {
+            announcementManager.markAsRead(announcement)
+        }
+    }
+    
+    private var priorityColor: Color {
+        switch announcement.priority {
+        case .normal: return Theme.Colors.turquoise
+        case .important: return Theme.Colors.sunsetOrange
+        case .urgent: return Theme.Colors.emergency
+        }
+    }
+}
+
+// MARK: - History Announcement Row
+struct HistoryAnnouncementRow: View {
+    let announcement: AnnouncementManager.Announcement
+    
+    var body: some View {
+        HStack(spacing: Theme.Spacing.sm) {
+            Image(systemName: announcement.priority.icon)
+                .foregroundColor(priorityColor.opacity(0.5))
+                .font(.caption)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(announcement.title)
+                    .font(Theme.Typography.callout)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                
+                Text(announcement.timeAgoText)
+                    .font(.system(size: 10))
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+            }
+            
+            Spacer()
+        }
+        .padding(Theme.Spacing.sm)
+        .background(Theme.Colors.backgroundLight.opacity(0.5))
+        .cornerRadius(Theme.CornerRadius.sm)
     }
     
     private var priorityColor: Color {

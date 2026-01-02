@@ -4,17 +4,20 @@ import UserNotifications
 class AnnouncementManager: ObservableObject {
     // MARK: - Published Properties
     @Published var announcements: [Announcement] = []
+    @Published var dismissedAnnouncements: [Announcement] = [] // History
     @Published var unreadCount: Int = 0
     @Published var latestAnnouncement: Announcement?
     
     // MARK: - Private Properties
     private let userDefaults = UserDefaults.standard
     private let announcementsKey = "announcements"
+    private let dismissedKey = "dismissedAnnouncements"
     private let currentUserID = "!local"
     
     // MARK: - Initialization
     init() {
         loadAnnouncements()
+        loadDismissedAnnouncements()
         updateUnreadCount()
     }
     
@@ -170,6 +173,53 @@ class AnnouncementManager: ObservableObject {
         latestAnnouncement = nil
     }
     
+    // MARK: - Dismiss Announcement (Remove from active, add to history)
+    func dismissAnnouncement(_ announcement: Announcement) {
+        // Mark as read first
+        markAsRead(announcement)
+        
+        // Move to dismissed history
+        if let index = announcements.firstIndex(where: { $0.id == announcement.id }) {
+            let dismissed = announcements.remove(at: index)
+            dismissedAnnouncements.insert(dismissed, at: 0)
+            
+            // Keep only last 50 in history
+            if dismissedAnnouncements.count > 50 {
+                dismissedAnnouncements = Array(dismissedAnnouncements.prefix(50))
+            }
+            
+            saveAnnouncements()
+            saveDismissedAnnouncements()
+            updateUnreadCount()
+        }
+    }
+    
+    // MARK: - Dismiss All Read
+    func dismissAllRead() {
+        let readAnnouncements = announcements.filter { $0.readBy.contains(currentUserID) }
+        for announcement in readAnnouncements {
+            if let index = announcements.firstIndex(where: { $0.id == announcement.id }) {
+                let dismissed = announcements.remove(at: index)
+                dismissedAnnouncements.insert(dismissed, at: 0)
+            }
+        }
+        
+        // Keep only last 50 in history
+        if dismissedAnnouncements.count > 50 {
+            dismissedAnnouncements = Array(dismissedAnnouncements.prefix(50))
+        }
+        
+        saveAnnouncements()
+        saveDismissedAnnouncements()
+        updateUnreadCount()
+    }
+    
+    // MARK: - Clear History
+    func clearHistory() {
+        dismissedAnnouncements.removeAll()
+        saveDismissedAnnouncements()
+    }
+    
     // MARK: - Active Announcements
     var activeAnnouncements: [Announcement] {
         announcements.filter { !$0.isExpired }
@@ -204,6 +254,12 @@ class AnnouncementManager: ObservableObject {
         }
     }
     
+    private func saveDismissedAnnouncements() {
+        if let encoded = try? JSONEncoder().encode(dismissedAnnouncements) {
+            userDefaults.set(encoded, forKey: dismissedKey)
+        }
+    }
+    
     private func loadAnnouncements() {
         if let data = userDefaults.data(forKey: announcementsKey),
            let decoded = try? JSONDecoder().decode([Announcement].self, from: data) {
@@ -211,6 +267,13 @@ class AnnouncementManager: ObservableObject {
         } else {
             // Load mock data
             announcements = Announcement.mockAnnouncements
+        }
+    }
+    
+    private func loadDismissedAnnouncements() {
+        if let data = userDefaults.data(forKey: dismissedKey),
+           let decoded = try? JSONDecoder().decode([Announcement].self, from: data) {
+            dismissedAnnouncements = decoded
         }
     }
     
