@@ -76,18 +76,15 @@ struct CommunityHubView: View {
                 Theme.Colors.backgroundDark.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Section picker (Channels / People / DMs)
+                    // Simple text-only picker - no icons
                     Picker("Section", selection: $selectedSection) {
-                        ForEach(CommunitySection.allCases, id: \.self) { section in
-                            HStack {
-                                Image(systemName: section.icon)
-                                Text(section.rawValue)
-                            }
-                            .tag(section)
-                        }
+                        Text("Channels").tag(CommunitySection.channels)
+                        Text("People").tag(CommunitySection.people)
+                        Text("DMs").tag(CommunitySection.dms)
                     }
                     .pickerStyle(.segmented)
-                    .padding()
+                    .padding(.horizontal)
+                    .padding(.vertical, Theme.Spacing.sm)
                     
                     // Content based on section
                     switch selectedSection {
@@ -324,6 +321,7 @@ struct ChannelJoinRow: View {
 }
 
 // MARK: - People List View
+/// Simplified - just search and list, no redundant stats/filters
 struct PeopleListView: View {
     @EnvironmentObject var meshtasticManager: MeshtasticManager
     @EnvironmentObject var profileManager: ProfileManager
@@ -334,46 +332,32 @@ struct PeopleListView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Search bar
+            // Search bar only
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
                 TextField("Find someone...", text: $searchText)
                     .foregroundColor(Theme.Colors.robotCream)
+                
+                // Inline online count
+                if onlineCount > 0 {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Theme.Colors.connected)
+                            .frame(width: 6, height: 6)
+                        Text("\(onlineCount)")
+                            .font(Theme.Typography.caption)
+                            .foregroundColor(Theme.Colors.connected)
+                    }
+                }
             }
             .padding()
             .background(Theme.Colors.backgroundLight)
             
-            // Connection status header
-            ConnectionStatusHeader(
-                totalMembers: meshtasticManager.campMembers.count,
-                onlineCount: onlineCount,
-                myConnectionsCount: profileManager.approvedContacts.count
-            )
-            
-            // Filter chips
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Theme.Spacing.sm) {
-                    ForEach(CommunityHubView.PeopleFilter.allCases, id: \.self) { filter in
-                        PeopleFilterChip(
-                            title: filter.rawValue,
-                            icon: filter.icon,
-                            isSelected: selectedFilter == filter
-                        ) {
-                            selectedFilter = filter
-                        }
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.vertical, Theme.Spacing.sm)
-            }
-            
-            // Members list
+            // Members list - straight to content
             ScrollView {
                 LazyVStack(spacing: Theme.Spacing.sm) {
-                    if profileManager.approvedContacts.isEmpty && selectedFilter == .connections {
-                        EmptyConnectionsPrompt()
-                    } else if filteredMembers.isEmpty {
+                    if filteredMembers.isEmpty {
                         VStack(spacing: Theme.Spacing.md) {
                             Image(systemName: "person.slash")
                                 .font(.system(size: 48))
