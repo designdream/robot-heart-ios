@@ -273,27 +273,38 @@ struct GlobalSearchView: View {
             ZStack {
                 Theme.Colors.backgroundDark.ignoresSafeArea()
                 
-                VStack(spacing: 0) {
-                    // Search bar
-                    HStack {
+                VStack(spacing: Theme.Spacing.md) {
+                    // Search bar with proper styling
+                    HStack(spacing: Theme.Spacing.sm) {
                         Image(systemName: "magnifyingglass")
-                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.4))
                         
                         TextField("Search people, events, tasks, camps...", text: $searchText)
+                            .font(Theme.Typography.body)
                             .foregroundColor(Theme.Colors.robotCream)
                             .autocapitalization(.none)
+                            .tint(Theme.Colors.sunsetOrange)
                         
                         if !searchText.isEmpty {
                             Button(action: { searchText = "" }) {
                                 Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                                    .font(.system(size: 16))
+                                    .foregroundColor(Theme.Colors.robotCream.opacity(0.4))
                             }
                         }
                     }
-                    .padding()
-                    .background(Theme.Colors.backgroundMedium)
+                    .padding(.horizontal, Theme.Spacing.md)
+                    .padding(.vertical, Theme.Spacing.sm + 4)
+                    .background(Theme.Colors.backgroundLight)
+                    .cornerRadius(Theme.CornerRadius.md)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
+                            .stroke(Theme.Colors.robotCream.opacity(0.1), lineWidth: 1)
+                    )
+                    .padding(.horizontal, Theme.Spacing.md)
                     
-                    // Category filter
+                    // Category filter pills
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: Theme.Spacing.sm) {
                             ForEach(SearchCategory.allCases, id: \.self) { category in
@@ -301,34 +312,37 @@ struct GlobalSearchView: View {
                                     title: category.rawValue,
                                     isSelected: selectedCategory == category
                                 ) {
-                                    selectedCategory = category
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        selectedCategory = category
+                                    }
                                 }
                             }
                         }
-                        .padding(.horizontal)
-                        .padding(.vertical, Theme.Spacing.sm)
+                        .padding(.horizontal, Theme.Spacing.md)
                     }
                     
                     // Results
                     ScrollView {
-                        LazyVStack(spacing: Theme.Spacing.md) {
+                        LazyVStack(alignment: .leading, spacing: Theme.Spacing.lg) {
                             if searchText.isEmpty {
-                                // Recent searches / suggestions
                                 recentSearchesView
                             } else {
-                                // Search results
                                 searchResultsView
                             }
                         }
-                        .padding()
+                        .padding(.horizontal, Theme.Spacing.md)
+                        .padding(.top, Theme.Spacing.sm)
+                        .padding(.bottom, Theme.Spacing.xl)
                     }
                 }
+                .padding(.top, Theme.Spacing.sm)
             }
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
+                        .font(Theme.Typography.callout)
                         .foregroundColor(Theme.Colors.sunsetOrange)
                 }
             }
@@ -336,40 +350,50 @@ struct GlobalSearchView: View {
     }
     
     private var recentSearchesView: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            Text("QUICK ACCESS")
-                .font(Theme.Typography.caption)
-                .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
-            
-            // Quick access buttons
-            HStack(spacing: Theme.Spacing.md) {
-                QuickSearchButton(icon: "person.3.fill", title: "Roster") {
-                    // Navigate to roster
-                }
-                QuickSearchButton(icon: "calendar", title: "Events") {
-                    // Navigate to events
-                }
-                QuickSearchButton(icon: "mappin.circle.fill", title: "Map") {
-                    // Navigate to map
+        VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+            // Quick Access Section
+            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                Text("QUICK ACCESS")
+                    .font(Theme.Typography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    .tracking(0.5)
+                
+                HStack(spacing: Theme.Spacing.md) {
+                    QuickSearchButton(icon: "person.3.fill", title: "Roster") {
+                        // Navigate to roster
+                    }
+                    QuickSearchButton(icon: "calendar", title: "Events") {
+                        // Navigate to events
+                    }
+                    QuickSearchButton(icon: "mappin.circle.fill", title: "Map") {
+                        // Navigate to map
+                    }
                 }
             }
             
-            Divider()
-                .background(Theme.Colors.robotCream.opacity(0.2))
+            // Divider with proper spacing
+            Rectangle()
+                .fill(Theme.Colors.robotCream.opacity(0.1))
+                .frame(height: 1)
+                .padding(.vertical, Theme.Spacing.xs)
             
-            Text("NEARBY CAMPS")
-                .font(Theme.Typography.caption)
-                .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
-                .padding(.top)
-            
-            // Placeholder for nearby camps
-            Text("Connect to mesh network to discover nearby camps")
-                .font(Theme.Typography.body)
-                .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Theme.Colors.backgroundLight)
-                .cornerRadius(Theme.CornerRadius.md)
+            // Nearby Camps Section
+            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                Text("NEARBY CAMPS")
+                    .font(Theme.Typography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    .tracking(0.5)
+                
+                Text("Connect to mesh network to discover nearby camps")
+                    .font(Theme.Typography.body)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    .padding(Theme.Spacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Theme.Colors.backgroundLight)
+                    .cornerRadius(Theme.CornerRadius.md)
+            }
         }
     }
     
