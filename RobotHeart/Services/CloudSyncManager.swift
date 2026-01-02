@@ -86,6 +86,11 @@ class CloudSyncManager: ObservableObject {
         self.localData = localData
         self.networkMonitor = NWPathMonitor()
         
+        // Don't start monitoring in init - do it lazily to avoid blocking main thread
+    }
+    
+    /// Call this to start cloud sync services (lazy initialization)
+    func startServices() {
         setupNetworkMonitoring()
         setupSyncTimer()
     }
