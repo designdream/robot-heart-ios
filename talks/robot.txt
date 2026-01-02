@@ -1,0 +1,1209 @@
+00:00-00:11
+talk check check check check check we both good all right um so we need to research communication
+
+00:12-00:21
+so you're saying the mesh nodes claude all right first let's do a like a little search in whatever
+
+00:21-00:28
+chat bot or about can you tell me about the established mesh network at burning man
+
+00:28-00:30
+the mesh communication network at Burning Man.
+
+00:31-00:37
+Give me an overview of the established mesh network at Burning Man.
+
+00:44-00:46
+Marquine didn't answer.
+
+00:51-00:52
+It's all good.
+
+00:53-00:56
+There'll be a portal because I saw him do it when I was with him in Vegas.
+
+00:56-00:57
+He was doing something different.
+
+00:58-01:10
+so whenever he pops up oh it's in the app in like that in the in the phone app oh shit okay
+
+01:12-01:16
+united i was doing it on the website but i saw me on the website i thought okay
+
+01:18-01:22
+okay and so what do i do i just uh my flight
+
+01:22-01:22
+book
+
+01:42-01:48
+log it into my United account. Okay. Oh, I have a mile list. So am I a mileage plus?
+
+01:48-01:49
+Is that what I am?
+
+02:00-02:07
+Let's see. Premier booking. I'm logged in. Your current benefits. Conformary.
+
+02:10-02:12
+Your benefits when...
+
+02:12-02:12
+No.
+
+02:12-02:13
+Let's see.
+
+02:13-02:13
+I'm going to book a flight.
+
+02:14-02:15
+Book a flight.
+
+02:16-02:18
+Oh, regular or reward travel?
+
+02:19-02:20
+Regular.
+
+02:20-02:21
+United personnel travel?
+
+02:23-02:24
+That's probably United personnel travel.
+
+02:25-02:25
+Yeah.
+
+02:26-02:26
+Okay.
+
+02:27-02:28
+Departure date.
+
+02:29-02:30
+Tomorrow.
+
+02:30-02:31
+Tomorrow Friday.
+
+02:32-02:34
+Felipe nonstop to...
+
+02:35-02:37
+Let's do Miami.
+
+02:38-02:39
+Where are you at?
+
+02:42-02:50
+are you UK UK oh you you're having fun happy new year
+
+02:53-02:58
+so I just all right so I just pick any flight here and non-stop select
+
+03:00-03:08
+oh shit yeah dude I'm in I'm I got it thank you fuck yeah welcome thank you thank you
+
+03:10-03:16
+thank you thank you all right bye happy happy new years man bye bye that's awesome
+
+03:16-03:17
+cheers
+
+03:23-03:29
+different interface fight deck jump seats view seat map
+
+03:31-03:32
+fuck yeah
+
+03:32-03:33
+I'm done
+
+03:33-03:33
+San Francisco
+
+03:34-03:34
+Miami
+
+03:35-03:35
+I can see
+
+03:35-03:36
+the empty seats
+
+03:36-03:36
+on the plane
+
+03:40-03:40
+what
+
+03:42-03:43
+you know what I like
+
+03:43-03:44
+about this
+
+03:45-03:46
+what I like about this
+
+03:46-03:47
+flight deck jump seats
+
+03:47-03:48
+are in
+
+03:48-03:48
+you gotta watch out
+
+03:48-03:49
+flight deck jump seats
+
+03:49-03:50
+are in the
+
+03:50-03:51
+oh don't do that
+
+03:51-03:51
+cockpit
+
+03:52-03:52
+yeah
+
+03:54-03:54
+I'm pretty sure
+
+03:55-03:56
+so there's a first class
+
+03:56-03:57
+so you can take
+
+03:57-03:58
+a first class flight
+
+03:59-04:00
+8 a.m. tomorrow?
+
+04:00-04:01
+That's tomorrow, right?
+
+04:06-04:07
+That's sweet.
+
+04:07-04:08
+Select.
+
+04:10-04:11
+What do I do?
+
+04:11-04:12
+Wait, is this gonna...
+
+04:13-04:14
+Personal economy?
+
+04:15-04:16
+I just took a first class
+
+04:17-04:17
+enrolled Felipe,
+
+04:18-04:19
+personal economy,
+
+04:19-04:19
+first class, right?
+
+04:20-04:21
+Next?
+
+04:22-04:24
+Are you fucking kidding me, bro?
+
+04:25-04:25
+That's wild.
+
+04:26-04:28
+I just got united today
+
+04:28-04:34
+for the first time i've been on american americans not this yeah this unlocks a whole world have you
+
+04:34-04:41
+seen where united flies i know where united flies oh dude i mean we're at their hub bro as if i was
+
+04:41-04:52
+their help i'm gonna ask them to get me another one um uh uh blake
+
+05:03-05:03
+he's black
+
+05:17-05:20
+man is putting way too much effort into a simple question
+
+05:24-05:25
+four and a half minutes.
+
+05:26-05:26
+That's why I like it.
+
+05:27-05:29
+We just need a simple overview
+
+05:29-05:32
+of what the current state of Mesh Network is.
+
+05:33-05:34
+Put that in ChatGPT.
+
+05:35-05:36
+We're going to put it in all of them.
+
+05:37-05:39
+You're going to have to deal with all of them.
+
+05:41-05:43
+ChatGPT is going to give you an overview
+
+05:43-05:44
+in about five seconds.
+
+05:55-05:55
+Claude
+
+05:56-05:58
+perplexity was way faster
+
+05:58-06:00
+perplexity was way faster
+
+06:02-06:03
+alright but we brought visuals
+
+06:08-06:10
+this is actually a good blog post
+
+06:12-06:14
+put the same prompt
+
+06:14-06:15
+and all of them and time them?
+
+06:16-06:16
+- Yep.
+
+06:17-06:18
+- And show what each one showed?
+
+06:24-06:28
+- The Laura text mesh, burning mesh.
+
+06:28-06:29
+Yeah, that's what we want.
+
+06:35-06:38
+- How it works, where are they?
+
+06:39-06:41
+Practical constraints, burning mesh.
+
+07:01-07:03
+We want to build an app for our camp.
+
+07:04-07:07
+I usually, I do exploration in ChatGPT.
+
+07:08-07:11
+So we want to build an app for our camp.
+
+07:12-07:14
+that lets us communicate
+
+07:16-07:19
+our locations as well as camp updates?
+
+07:20-07:23
+Would we be able to build that app
+
+07:23-07:26
+and have it make use of the MeshTactic network?
+
+07:33-07:33
+MeshTactics.
+
+07:38-07:41
+It's all good. It'll figure it out.
+
+07:46-07:46
+yes we can
+
+07:47-07:47
+your app won't
+
+07:48-07:48
+talk to the
+
+07:48-07:49
+mess directly
+
+07:50-07:51
+it will talk
+
+07:51-07:51
+to a
+
+07:51-07:51
+mess-tastic
+
+07:52-07:52
+radio node
+
+07:53-07:53
+yeah
+
+08:05-08:06
+and then
+
+08:06-08:06
+we're going to
+
+08:06-08:06
+go back to
+
+08:06-08:07
+manu's
+
+08:07-08:07
+I'm going to
+
+08:07-08:08
+keep everybody
+
+08:08-08:09
+in parody
+
+08:10-08:11
+so that
+
+08:11-08:15
+what results we end up with and and this one's still running so i'm going to add it to it
+
+08:17-08:21
+okay in midstream all right keep going back to your next iteration
+
+08:31-08:35
+it's a pretty harsh environment out there and we're going to be on bicycles and mobile and
+
+08:35-08:41
+hanging off of things so we need to be able to make sure that like it's not clunky won't get
+
+08:41-08:45
+stuck on anything won't be dangerous doesn't have heavy batteries like we've got to be
+
+08:46-08:49
+really really mobile think of us as tactical operators
+
+08:55-09:03
+it's just going to give us a list of established mesh hardware that we can use which is helpful
+
+09:08-09:12
+We really just need like functionality requirement list from the app.
+
+09:14-09:17
+We need to figure out what protocol the app uses to interface with the mesh network.
+
+09:18-09:18
+All right.
+
+09:19-09:20
+So let's say that again then here.
+
+09:21-09:21
+Ready?
+
+09:24-09:30
+What we really need are a list of functionality requirements for the app that our camp would use.
+
+09:31-09:40
+And then we need to determine what protocol that app will work with to communicate with the mesh-tastic network.
+
+09:41-09:49
+And then we need to figure out what mesh hardware will be used for the communication.
+
+09:56-10:04
+I like that Whisper automatically puts things into bulleted lists and numbered lists.
+
+10:17-10:19
+Perplexity answers really fucking fast.
+
+10:20-10:22
+Yeah, I wonder what models they're pinging.
+
+10:24-10:26
+Some of the instant models.
+
+10:28-10:33
+like we're routing to we're routing to reasoning models or instant based on the question
+
+10:34-10:37
+they're routing to instant immediately because it's cheaper
+
+10:41-10:49
+i like like i like this response here of all that it said yeah i almost want to give all the ais
+
+10:50-10:56
+let's see what's this one say all right so this one oh this one so so at this point do i go close
+
+10:56-11:02
+some shit i'll close some shit sorry here a million fucking things i'm like what's going on here bro
+
+11:04-11:09
+close close close close close close close close close i'm leaving that one open
+
+11:09-11:10
+Samford.
+
+11:13-11:14
+Oh, I've got to leave these open.
+
+11:15-11:17
+What did I have here open?
+
+11:18-11:20
+Close that, close that.
+
+11:21-11:24
+Dude, these are the people I'm bringing on here, by the way.
+
+11:25-11:26
+So this dude right here?
+
+11:26-11:26
+Yep.
+
+11:28-11:30
+He worked at the National, let's see.
+
+11:31-11:34
+The biggest thing is he did the Bioweapons Department of Defense.
+
+11:35-11:39
+DOD, does he talk about developing bioweapons in here?
+
+11:40-11:42
+Did I find that somewhere else?
+
+11:43-11:46
+Ah, U.S. Omrid military.
+
+11:46-11:50
+He worked on vaccine development for BSL-4 viral agents.
+
+11:51-11:51
+Hell yeah.
+
+11:52-11:54
+This is one of my advisors, bro.
+
+11:55-11:57
+I'm putting together a crack team of doctors.
+
+11:58-12:00
+My doctors are like the shit.
+
+12:00-12:01
+Hell yeah.
+
+12:06-12:07
+of being advised by people
+
+12:07-12:09
+who have clearance higher than the president.
+
+12:17-12:18
+All right.
+
+12:18-12:19
+All right, we're good.
+
+12:19-12:21
+Let's see what chat GPT said.
+
+12:22-12:23
+All right, so chat says...
+
+12:26-12:28
+Squad roster, location sharing,
+
+12:29-12:30
+low bandwidth tactical,
+
+12:31-12:33
+Camp updates that are broadcast out.
+
+12:34-12:36
+Reliable UX, safe and simple.
+
+12:37-12:38
+Love it.
+
+12:38-12:39
+Yeah, that sounds all good.
+
+12:42-12:43
+I really like this.
+
+12:44-12:44
+Camp infrastructure.
+
+12:46-12:51
+TECO, one elevated node, redundant, pure tactical, US camp.
+
+12:52-12:54
+Concrete recommended setup for your camp.
+
+12:54-12:58
+Every mobile operator, a T1000E personal node.
+
+12:59-13:00
+We searched that on just the web.
+
+13:02-13:06
+That's like just a product that we would be buying.
+
+13:12-13:15
+Yeah, that's what anyone that wants to be.
+
+13:15-13:15
+So I fucked up.
+
+13:15-13:16
+You had those, right?
+
+13:16-13:18
+I bought them, and I didn't buy the E.
+
+13:20-13:22
+Or, no, I did buy the E.
+
+13:22-13:24
+I didn't buy, there's version 1 through 3.
+
+13:25-13:25
+Yeah.
+
+13:25-13:26
+And I bought version 2.
+
+13:27-13:27
+Yeah.
+
+13:27-13:29
+And you need version 3.
+
+13:29-13:29
+Okay
+
+13:32-13:33
+So then we get
+
+13:33-13:34
+Everyone in camp
+
+13:34-13:37
+I want to make sure that this is compatible with iPhones
+
+13:40-13:41
+Okay
+
+13:42-13:43
+So then anyone in camp
+
+13:44-13:46
+That wants to be on the network
+
+13:46-13:47
+Just gets one of those
+
+13:48-13:49
+How much do these cost?
+
+13:50-13:51
+Dude I think they're like 30 bucks
+
+13:52-13:54
+It's like trivial for our camp
+
+13:56-13:58
+Yeah this is the one that bought
+
+13:58-14:01
+And we could probably buy them cheaper in bulk off Alibaba.
+
+14:10-14:13
+Can you find these cheaper in bulk if I need to buy like 100 of them?
+
+14:28-14:29
+I'm going to Alibaba right now.
+
+14:35-14:37
+Oh, these are like the supplier suppliers.
+
+14:38-14:38
+Look at that.
+
+14:40-14:41
+No, they're more expensive here.
+
+14:45-14:47
+I'm sorry, I forgot to text you the address.
+
+14:47-14:47
+Hold on.
+
+14:47-14:48
+398 Pennsylvania.
+
+14:49-14:50
+You got some badges.
+
+14:50-14:51
+How long are you guys going to be there?
+
+14:53-14:53
+I'm not going anywhere.
+
+14:54-14:56
+Until, are you going to the MoMA at four?
+
+14:57-15:00
+Lauren hasn't confirmed MoMA at four yet, so until four?
+
+15:02-15:03
+Okay, all right.
+
+15:03-15:04
+Maybe longer.
+
+15:04-15:07
+Lauren's up at the house we were at yesterday.
+
+15:07-15:08
+I don't know where she's at.
+
+15:08-15:10
+She's hanging out with Willa
+
+15:11-15:12
+up in
+
+15:13-15:14
+Restoration Hardware.
+
+15:16-15:16
+Okay.
+
+15:17-15:18
+I'll see you later. Bye.
+
+15:19-15:19
+Alright, bye.
+
+15:20-15:22
+$10 minimum order, size $100.
+
+15:25-15:26
+We can definitely get them cheap.
+
+15:37-15:39
+That feels almost too cheap, though.
+
+15:50-15:51
+How much are they?
+
+15:52-15:53
+I found them on Alibaba.
+
+15:53-15:57
+This says 10 bucks if you do minimum order size 100.
+
+16:00-16:01
+That's great.
+
+16:02-16:03
+I'm even fine at 40.
+
+16:05-16:05
+Yeah.
+
+16:06-16:08
+So, you and I need one where you're at.
+
+16:10-16:12
+So, we need to order two of these right now.
+
+16:15-16:16
+Buy.
+
+16:16-16:17
+In stock, right?
+
+16:17-16:18
+You get one.
+
+16:18-16:19
+We'll get three of them.
+
+16:19-16:21
+Yeah, they'd be fun for us to fuck around with, at least.
+
+16:23-16:24
+Let's check out.
+
+16:32-16:33
+I don't want to use my chicken.
+
+16:34-16:35
+Let me order.
+
+16:35-16:35
+Oh, wait.
+
+16:36-16:36
+Where's my mailing address?
+
+16:39-16:39
+Fuck.
+
+16:42-16:43
+Too quick on the draw.
+
+16:44-16:45
+Oh, good.
+
+16:45-16:45
+I didn't order yet.
+
+16:50-16:50
+Change.
+
+16:52-16:53
+Where do we want to ship this?
+
+16:53-16:53
+God damn it.
+
+16:55-16:56
+Jesus Christ, Felipe.
+
+16:59-17:02
+That's the fucking drug dealer's list of addresses right there.
+
+17:04-17:05
+That was hilarious.
+
+17:06-17:07
+that is not a normal number
+
+17:09-17:10
+it's not built for me bro
+
+17:12-17:13
+my user experience
+
+17:14-17:14
+everywhere is terrible
+
+17:16-17:17
+that was hilarious
+
+17:19-17:19
+it's like
+
+17:20-17:21
+40 addresses
+
+17:27-17:28
+that was great
+
+17:29-17:29
+oh shit
+
+17:30-17:32
+oh my god
+
+17:33-17:34
+that is
+
+17:34-17:36
+I'd never even thought about that.
+
+17:40-17:41
+The problem with screening.
+
+17:42-17:43
+Screaming your screen.
+
+17:43-17:44
+Wait, what am I doing?
+
+17:44-17:45
+I don't want...
+
+17:48-17:49
+What am I missing?
+
+17:49-17:50
+Oh, you got to pick a method.
+
+17:53-17:53
+From the China warehouse?
+
+17:54-17:57
+That's going to take fucking three weeks to get here.
+
+17:57-17:58
+Those ones.
+
+18:01-18:03
+I think we can get these
+
+18:03-18:05
+the same price on Amazon
+
+18:05-18:06
+and be here in two days.
+
+18:07-18:07
+Really?
+
+18:08-18:08
+Yeah.
+
+18:08-18:09
+That's why,
+
+18:09-18:11
+this is where I went wrong last time, bro.
+
+18:13-18:14
+Okay, what's it called?
+
+18:15-18:16
+T1000-E.
+
+18:17-18:18
+T1000.
+
+18:18-18:19
+This is, dude.
+
+18:22-18:24
+Oh, they're 50 bucks on Amazon.
+
+18:25-18:26
+Bro, we already got it
+
+18:27-18:28
+already connected right there.
+
+18:30-18:31
+We're good.
+
+18:32-18:34
+these ones would be here in two days
+
+18:37-18:39
+what's this DHL two days
+
+18:41-18:42
+support the guys that make it
+
+18:44-18:46
+I don't think those are the guys that make it
+
+18:48-18:48
+let's do it
+
+18:49-18:51
+you're such an asshole bro what are you talking about
+
+18:51-18:53
+these are the guys that have the repo
+
+18:53-18:54
+look check this out
+
+19:00-19:01
+check their github
+
+19:01-19:01
+bro.
+
+19:03-19:04
+I put a P on there.
+
+19:06-19:07
+Where's our GitHub, bro?
+
+19:09-19:11
+I mean, dude, who doesn't want
+
+19:11-19:13
+to support this website? Look at this, bro.
+
+19:14-19:15
+Alright, alright.
+
+19:16-19:17
+Like, this
+
+19:17-19:19
+guy put time into this. Do you know how happy
+
+19:19-19:21
+I am looking at this right here? NVIDIA? Oh, it's
+
+19:21-19:22
+got a spark right here.
+
+19:23-19:24
+Look at all the shit I need right here.
+
+19:25-19:26
+Alright, alright.
+
+19:28-19:29
+I don't know. It's not supporting local,
+
+19:29-19:31
+but it's... There's an open source dexterous hand.
+
+19:31-19:40
+pretty cool yeah but they have a github dude look at their support support discord forum
+
+19:42-19:50
+all right and uh and where's a document what's this site um it's a seedstudio.com
+
+19:53-19:59
+look at this bro okay this is why i want to give them the money
+
+20:04-20:04
+because
+
+20:06-20:07
+they are like
+
+20:07-20:07
+they do like
+
+20:08-20:08
+sensors and like
+
+20:09-20:09
+open source hardware
+
+20:09-20:10
+development
+
+20:10-20:11
+bro look at this
+
+20:13-20:14
+how cool is this
+
+20:14-20:14
+dude they make the
+
+20:15-20:15
+videos on all the
+
+20:15-20:16
+products I want to
+
+20:16-20:16
+check out
+
+20:20-20:21
+and they got live
+
+20:21-20:22
+streams of them too
+
+20:22-20:22
+sometimes
+
+20:25-20:26
+yeah that's sweet
+
+20:26-20:26
+alright
+
+20:27-20:27
+yeah yeah
+
+20:28-20:29
+Facial recognition.
+
+20:29-20:31
+I'm going through their new gear, new start right now.
+
+20:31-20:32
+New year, new year.
+
+20:35-20:36
+Facial recognition.
+
+20:39-20:39
+On edge.
+
+20:45-20:46
+All right, there it is.
+
+20:47-20:48
+Terminal.
+
+20:50-20:54
+And now, I can take AI to come and grab all this information
+
+20:54-20:56
+and pull this YouTube video down
+
+20:56-20:57
+and fucking suck it up
+
+20:57-20:58
+on my laptop
+
+20:58-20:59
+and read the screens
+
+20:59-21:00
+throughout this entire thing.
+
+21:01-21:02
+That's sick.
+
+21:06-21:06
+All right, anyway,
+
+21:06-21:07
+I'm going to have a check out.
+
+21:08-21:08
+I'm not letting you
+
+21:09-21:09
+fucking sway me.
+
+21:09-21:10
+That's bullshit.
+
+21:10-21:11
+These guys are good people.
+
+21:12-21:14
+All right, all right, all right.
+
+21:14-21:15
+It's $12.
+
+21:15-21:16
+If it's two days late,
+
+21:17-21:17
+it's five days late,
+
+21:17-21:18
+I am loyal.
+
+21:21-21:22
+No, I would order it from Amazon
+
+21:23-21:23
+if it was here tomorrow,
+
+21:25-21:26
+but...
+
+21:26-21:27
+that would be
+
+21:27-21:27
+terrible
+
+21:30-21:30
+check out
+
+21:34-21:35
+do we want anything else from there?
+
+21:37-21:37
+I don't think so
+
+21:38-21:39
+they have such cool stuff like the tracker
+
+21:40-21:41
+pro I've been looking at for a long time
+
+21:43-21:46
+I'm looking at some of their robot arms right now
+
+21:48-21:50
+I've ordered from you guys before
+
+21:50-21:51
+we got password
+
+22:01-22:02
+Where's our food at?
+
+22:07-22:08
+Oh, it's already at the door, bro.
+
+22:11-22:11
+Food here.
+
+22:14-22:15
+Let's go get it.
+
+22:16-22:16
+Hell yeah.
+
+22:17-22:18
+Fuck yeah.
+
+22:20-22:21
+Where's our food at?
+
+22:21-22:21
+Here.
+
+22:22-22:23
+Alright, we gotta pause our mic.
+
+22:24-22:24
+Yeah.
+
+22:26-22:27
+Did they just leave it out front?
+
+22:34-22:34
+Yeah, it's out front.
+
+22:35-22:36
+It's on the tour set.
+
+22:36-22:37
+Where's Piazza?
+
+22:37-22:41
+San Francisco, where things don't last over the tour set very well.
+
+22:42-22:42
+Hmm.
+

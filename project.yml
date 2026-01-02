@@ -43,10 +43,14 @@ targets:
         NSLocationAlwaysAndWhenInUseUsageDescription: "Robot Heart needs your location to share it with your camp mates on the playa."
         UIBackgroundModes:
           - bluetooth-central
+          - bluetooth-peripheral
           - location
+          - fetch
+          - remote-notification
         UIRequiredDeviceCapabilities:
           - armv7
           - bluetooth-le
+        NSCameraUsageDescription: "Robot Heart needs camera access to scan QR codes for contact exchange."
 
 
 schemes:

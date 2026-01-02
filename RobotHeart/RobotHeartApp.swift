@@ -1,8 +1,13 @@
 import SwiftUI
 import UserNotifications
+import CoreData
 
 @main
 struct RobotHeartApp: App {
+    // Core Data persistence
+    let persistenceController = PersistenceController.shared
+    
+    // Existing managers
     @StateObject private var meshtasticManager = MeshtasticManager()
     @StateObject private var locationManager = LocationManager()
     @StateObject private var shiftManager = ShiftManager()
@@ -15,6 +20,14 @@ struct RobotHeartApp: App {
     @StateObject private var profileManager = ProfileManager()
     @StateObject private var socialManager = SocialManager()
     @StateObject private var taskManager = TaskManager()
+    @StateObject private var campLayoutManager = CampLayoutManager()
+    
+    // New offline-first managers
+    @StateObject private var localDataManager = LocalDataManager.shared
+    @StateObject private var bleMeshManager = BLEMeshManager.shared
+    @StateObject private var messageQueueManager = MessageQueueManager.shared
+    @StateObject private var cloudSyncManager = CloudSyncManager.shared
+    @StateObject private var campNetworkManager = CampNetworkManager.shared
     
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
@@ -27,6 +40,7 @@ struct RobotHeartApp: App {
         WindowGroup {
             if hasCompletedOnboarding {
                 MainAppView()
+                    .environment(\.managedObjectContext, persistenceController.viewContext)
                     .environmentObject(meshtasticManager)
                     .environmentObject(locationManager)
                     .environmentObject(shiftManager)
@@ -39,9 +53,16 @@ struct RobotHeartApp: App {
                     .environmentObject(profileManager)
                     .environmentObject(socialManager)
                     .environmentObject(taskManager)
+                    .environmentObject(campLayoutManager)
+                    .environmentObject(localDataManager)
+                    .environmentObject(bleMeshManager)
+                    .environmentObject(messageQueueManager)
+                    .environmentObject(cloudSyncManager)
+                    .environmentObject(campNetworkManager)
                     .preferredColorScheme(.dark)
                     .onAppear {
                         shiftManager.requestNotificationPermissions()
+                        startOfflineServices()
                     }
             } else {
                 OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
@@ -99,5 +120,33 @@ struct RobotHeartApp: App {
             checkInCategory,
             announcementCategory
         ])
+    }
+    
+    private func startOfflineServices() {
+        // Start BLE mesh networking
+        let userID = UserDefaults.standard.string(forKey: "userID") ?? UUID().uuidString
+        let userName = profileManager.myProfile.displayName
+        
+        // Save user ID if not set
+        if UserDefaults.standard.string(forKey: "userID") == nil {
+            UserDefaults.standard.set(userID, forKey: "userID")
+        }
+        UserDefaults.standard.set(userName, forKey: "userName")
+        
+        // Start BLE advertising and scanning
+        bleMeshManager.startAdvertising(userID: userID, userName: userName)
+        bleMeshManager.startScanning()
+        
+        // Start camp network discovery
+        campNetworkManager.startDiscovery()
+        
+        // Setup gateway node relay if online
+        if cloudSyncManager.isGatewayNode {
+            cloudSyncManager.relayFromCloud()
+        }
+        
+        // Cleanup old data
+        localDataManager.cleanupExpiredMessages()
+        localDataManager.cleanupOldSyncItems()
     }
 }

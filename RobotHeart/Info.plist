@@ -24,6 +24,8 @@
 	<string>Robot Heart needs Bluetooth to connect to your Meshtastic device for mesh communication.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Robot Heart needs Bluetooth to connect to your Meshtastic device for mesh communication.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Robot Heart needs camera access to scan QR codes for contact exchange.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Robot Heart needs your location to share it with your camp mates on the playa.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
@@ -31,7 +33,10 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>
+		<string>bluetooth-peripheral</string>
 		<string>location</string>
+		<string>fetch</string>
+		<string>remote-notification</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
