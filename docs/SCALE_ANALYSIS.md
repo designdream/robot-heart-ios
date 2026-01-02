@@ -812,22 +812,147 @@ class MemoryManager {
 - [x] LoRa mesh for extended range
 - [x] Local SQLite storage
 - [x] Offline-first architecture
+- [x] Store-and-forward message queuing
+- [x] Lazy BLE initialization (no blocking)
 
 ### ✅ Works Without Cellular
 - [x] No phone number required
 - [x] No SMS verification
-- [x] Device-based identity
+- [x] Device-based identity (Secure Enclave)
+- [x] QR code contact exchange
+- [x] Playa name aliases
 
-### ⚠️ Partial: Works Without Cloud
-- [x] Core messaging works
-- [ ] Social capital sync needs gateway
-- [ ] Cross-event history needs sync
+### ✅ Works Without Cloud
+- [x] Core messaging works offline
+- [x] Social Capital stored locally
+- [x] Announcements with local history
+- [x] Border Crossing mode for data clearing
+- [x] Gateway nodes sync when available (optional)
 
-### ❌ Needs Work: Works at Scale
-- [ ] Message pruning not implemented
-- [ ] Rate limiting not implemented
-- [ ] Anomaly detection not implemented
-- [ ] Trust scoring not implemented
+### ✅ Privacy & Security
+- [x] E2E encryption ready (X25519 + AES-256-GCM)
+- [x] Local-only storage by default
+- [x] Message retention policies (24h/7d/30d/never)
+- [x] Ghost mode for location privacy
+- [x] Contact request approval system
+
+### ⚠️ Partial: Works at Scale (1,000+ users)
+- [x] Message relay with duplicate detection
+- [x] Announcement dismissal/history (max 50)
+- [ ] Full message pruning (proposed, not implemented)
+- [ ] Rate limiting (proposed, not implemented)
+- [ ] Anomaly detection (proposed, not implemented)
+
+### ❌ Needs Work: Production Hardening
+- [ ] Cryptographic message signing
+- [ ] Trust scoring system
+- [ ] Shift verification proofs
+- [ ] Multi-path redundant routing
+
+---
+
+## Signal Protocol Insights
+
+The Signal Protocol provides excellent patterns for secure messaging that could enhance Robot Heart:
+
+### Key Concepts from Signal
+
+| Component | Signal Implementation | Robot Heart Application |
+|-----------|----------------------|------------------------|
+| **X3DH** | Extended Triple Diffie-Hellman key agreement | Async key exchange for offline users |
+| **Double Ratchet** | Forward secrecy via key rotation | Per-message key derivation |
+| **Prekeys** | Pre-published keys for async contact | Gateway nodes could store prekeys |
+| **Deniability** | No proof sender wrote message | Important for playa privacy |
+
+### X3DH for Mesh Networks
+
+Signal's X3DH is designed for async messaging where Bob is offline. This maps perfectly to mesh scenarios:
+
+```
+Alice wants to message Bob (offline):
+1. Alice fetches Bob's prekey bundle from mesh/gateway
+2. Alice computes shared secret using X3DH
+3. Alice sends encrypted initial message
+4. Message relays through mesh until Bob comes online
+5. Bob decrypts using his private prekey
+```
+
+**Adaptation for Robot Heart:**
+- Prekey bundles stored on gateway nodes (Starlink users)
+- Prekeys also broadcast via LoRa for local discovery
+- One-time prekeys provide forward secrecy even if identity key compromised
+
+### Double Ratchet for Mesh
+
+The Double Ratchet provides:
+- **Forward secrecy**: Compromise of current keys doesn't reveal past messages
+- **Break-in recovery**: New keys generated after compromise
+
+**Mesh Adaptation:**
+```swift
+// Simplified Double Ratchet for mesh
+struct MeshRatchet {
+    var rootKey: SymmetricKey
+    var sendingChainKey: SymmetricKey
+    var receivingChainKey: SymmetricKey
+    var sendingRatchetKey: P256.KeyAgreement.PrivateKey
+    var receivingRatchetKey: P256.KeyAgreement.PublicKey?
+    
+    mutating func ratchetStep(theirPublicKey: P256.KeyAgreement.PublicKey) {
+        // Perform DH
+        let sharedSecret = try! sendingRatchetKey.sharedSecretFromKeyAgreement(with: theirPublicKey)
+        
+        // Derive new root key and chain key
+        let derived = sharedSecret.hkdfDerivedSymmetricKey(
+            using: SHA256.self,
+            salt: rootKey,
+            sharedInfo: "RobotHeart".data(using: .utf8)!,
+            outputByteCount: 64
+        )
+        
+        // Split into new root key and chain key
+        rootKey = SymmetricKey(data: derived.prefix(32))
+        sendingChainKey = SymmetricKey(data: derived.suffix(32))
+        
+        // Generate new ratchet key pair
+        sendingRatchetKey = P256.KeyAgreement.PrivateKey()
+    }
+}
+```
+
+### Sesame for Multi-Device
+
+Signal's Sesame algorithm handles multi-device scenarios - relevant for Robot Heart where users might have:
+- iPhone
+- Meshtastic radio
+- Shared camp tablet
+
+**Key insight**: Each device has its own prekeys, messages encrypted to all devices.
+
+### Open Source Resources
+
+| Resource | URL | Relevance |
+|----------|-----|-----------|
+| **libsignal** | github.com/signalapp/libsignal | Reference implementation (Rust) |
+| **Signal iOS** | github.com/signalapp/Signal-iOS | iOS patterns |
+| **X3DH Spec** | signal.org/docs/specifications/x3dh | Key exchange protocol |
+| **Double Ratchet** | signal.org/docs/specifications/doubleratchet | Message encryption |
+
+### Implementation Recommendations
+
+**Phase 1: Basic E2E (Current)**
+- X25519 key pairs per user
+- AES-256-GCM encryption
+- Signatures for authenticity
+
+**Phase 2: Signal-Style (Future)**
+- X3DH for async key agreement
+- Prekey bundles on gateway nodes
+- Double Ratchet for forward secrecy
+
+**Phase 3: Post-Quantum (Long-term)**
+- Signal's PQXDH protocol
+- ML-KEM for quantum resistance
 
 ---
 
