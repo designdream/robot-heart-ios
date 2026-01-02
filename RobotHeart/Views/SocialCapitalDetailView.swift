@@ -5,8 +5,6 @@ struct SocialCapitalDetailView: View {
     @EnvironmentObject var economyManager: EconomyManager
     @EnvironmentObject var meshtasticManager: MeshtasticManager
     @EnvironmentObject var profileManager: ProfileManager
-    @State private var showingBorderCrossingSheet = false
-    @State private var showingPrivacySettings = false
     
     var body: some View {
         ZStack {
@@ -23,23 +21,14 @@ struct SocialCapitalDetailView: View {
                     // Contribution History
                     ContributionHistoryCard()
                     
-                    // Privacy & Security Section
-                    PrivacySecurityCard(
-                        showingBorderCrossing: $showingBorderCrossingSheet,
-                        showingPrivacySettings: $showingPrivacySettings
-                    )
+                    // How it works
+                    HowSocialCapitalWorksCard()
                 }
                 .padding()
             }
         }
         .navigationTitle("Social Capital")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingBorderCrossingSheet) {
-            BorderCrossingView()
-        }
-        .sheet(isPresented: $showingPrivacySettings) {
-            SCPrivacySettingsView()
-        }
     }
 }
 
@@ -173,80 +162,80 @@ struct ContributionHistoryCard: View {
     }
 }
 
-// MARK: - Privacy & Security Card
-struct PrivacySecurityCard: View {
-    @Binding var showingBorderCrossing: Bool
-    @Binding var showingPrivacySettings: Bool
-    
+// MARK: - How Social Capital Works Card
+struct HowSocialCapitalWorksCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             HStack {
-                Image(systemName: "lock.shield.fill")
-                    .foregroundColor(Theme.Colors.turquoise)
+                Image(systemName: "lightbulb.fill")
+                    .foregroundColor(Theme.Colors.goldenYellow)
                 
-                Text("Privacy & Security")
+                Text("How It Works")
                     .font(Theme.Typography.headline)
                     .foregroundColor(Theme.Colors.robotCream)
             }
             
-            Text("Your Social Capital is stored locally and synced via encrypted mesh. You control your data.")
+            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                SCHowItWorksRow(
+                    icon: "calendar.badge.clock",
+                    title: "Complete Shifts",
+                    description: "Earn 8-20 points per shift based on difficulty"
+                )
+                
+                SCHowItWorksRow(
+                    icon: "checkmark.circle",
+                    title: "Do Tasks",
+                    description: "P1: +15, P2: +10, P3: +5 points"
+                )
+                
+                SCHowItWorksRow(
+                    icon: "arrow.up.circle",
+                    title: "Level Up",
+                    description: "More contributions = higher trust level"
+                )
+                
+                SCHowItWorksRow(
+                    icon: "heart.circle",
+                    title: "Build Community",
+                    description: "Your reputation helps the whole camp"
+                )
+            }
+            
+            Text("Social Capital cannot be bought - only earned through participation.")
                 .font(Theme.Typography.caption)
-                .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
-            
-            Divider()
-                .background(Theme.Colors.robotCream.opacity(0.2))
-            
-            // Border Crossing Button
-            Button(action: { showingBorderCrossing = true }) {
-                HStack {
-                    Image(systemName: "airplane.departure")
-                        .foregroundColor(Theme.Colors.warning)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Border Crossing Mode")
-                            .font(Theme.Typography.callout)
-                            .foregroundColor(Theme.Colors.robotCream)
-                        
-                        Text("Clear messages, keep contacts & capital")
-                            .font(.system(size: 10))
-                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
-                    }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
-                }
-                .padding(.vertical, Theme.Spacing.sm)
-            }
-            
-            // Privacy Settings Button
-            Button(action: { showingPrivacySettings = true }) {
-                HStack {
-                    Image(systemName: "hand.raised.fill")
-                        .foregroundColor(Theme.Colors.turquoise)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Privacy Settings")
-                            .font(Theme.Typography.callout)
-                            .foregroundColor(Theme.Colors.robotCream)
-                        
-                        Text("Message retention, encryption options")
-                            .font(.system(size: 10))
-                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
-                    }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
-                }
-                .padding(.vertical, Theme.Spacing.sm)
-            }
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                .italic()
+                .padding(.top, Theme.Spacing.sm)
         }
         .padding()
         .background(Theme.Colors.backgroundMedium)
         .cornerRadius(Theme.CornerRadius.lg)
+    }
+}
+
+struct SCHowItWorksRow: View {
+    let icon: String
+    let title: String
+    let description: String
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: Theme.Spacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(Theme.Colors.turquoise)
+                .frame(width: 24)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(Theme.Typography.callout)
+                    .fontWeight(.medium)
+                    .foregroundColor(Theme.Colors.robotCream)
+                
+                Text(description)
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+            }
+        }
     }
 }
 

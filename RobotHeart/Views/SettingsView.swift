@@ -10,6 +10,8 @@ struct SettingsView: View {
     @State private var selectedRole: CampMember.Role = .general
     @State private var shareInterval: Double = 15
     @State private var showingDeviceScanner = false
+    @State private var showingBorderCrossing = false
+    @State private var showingPrivacySettings = false
     
     var body: some View {
         NavigationView {
@@ -230,6 +232,57 @@ struct SettingsView: View {
                             .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
                     }
                     
+                    // Privacy & Data
+                    Section {
+                        // Border Crossing Mode
+                        Button(action: { showingBorderCrossing = true }) {
+                            HStack {
+                                Image(systemName: "airplane.departure")
+                                    .foregroundColor(Theme.Colors.warning)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Border Crossing Mode")
+                                        .foregroundColor(Theme.Colors.robotCream)
+                                    Text("Clear messages, keep contacts & capital")
+                                        .font(Theme.Typography.caption)
+                                        .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+                            }
+                        }
+                        
+                        // Privacy Settings
+                        Button(action: { showingPrivacySettings = true }) {
+                            HStack {
+                                Image(systemName: "hand.raised.fill")
+                                    .foregroundColor(Theme.Colors.turquoise)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Privacy Settings")
+                                        .foregroundColor(Theme.Colors.robotCream)
+                                    Text("Message retention, storage options")
+                                        .font(Theme.Typography.caption)
+                                        .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+                            }
+                        }
+                    } header: {
+                        Text("Privacy & Data")
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                    } footer: {
+                        Text("Your data is stored locally. Control how long messages are kept and prepare for travel.")
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    }
+                    
                     // Admin settings
                     Section {
                         Toggle(isOn: Binding(
@@ -309,6 +362,12 @@ struct SettingsView: View {
                         .font(Theme.Typography.title2)
                         .foregroundColor(Theme.Colors.robotCream)
                 }
+            }
+            .sheet(isPresented: $showingBorderCrossing) {
+                BorderCrossingView()
+            }
+            .sheet(isPresented: $showingPrivacySettings) {
+                SCPrivacySettingsView()
             }
         }
     }
