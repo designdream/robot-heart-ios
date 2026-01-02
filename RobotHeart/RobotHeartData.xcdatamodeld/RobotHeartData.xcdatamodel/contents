@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22225" systemVersion="23F79" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="CachedMessage" representedClassName="CachedMessage" syncable="YES" codeGenerationType="class">
+        <attribute name="content" optional="YES" attributeType="String"/>
+        <attribute name="encryptedPayload" optional="YES" attributeType="Binary"/>
+        <attribute name="expiresAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isDelivered" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="isRead" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="locationLat" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="locationLon" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="messageType" optional="YES" attributeType="String"/>
+        <attribute name="recipientID" optional="YES" attributeType="String"/>
+        <attribute name="senderID" optional="YES" attributeType="String"/>
+        <attribute name="senderName" optional="YES" attributeType="String"/>
+        <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="CachedMember" representedClassName="CachedMember" syncable="YES" codeGenerationType="class">
+        <attribute name="brcAddress" optional="YES" attributeType="String"/>
+        <attribute name="campID" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="lastLocationLat" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="lastLocationLon" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="lastSeen" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="publicKey" optional="YES" attributeType="Binary"/>
+        <attribute name="role" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="CachedCamp" representedClassName="CachedCamp" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="lastBroadcast" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="locationAddress" optional="YES" attributeType="String"/>
+        <attribute name="memberCount" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="publicKey" optional="YES" attributeType="Binary"/>
+    </entity>
+    <entity name="SyncQueueItem" representedClassName="SyncQueueItem" syncable="YES" codeGenerationType="class">
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isSynced" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="operation" optional="YES" attributeType="String"/>
+        <attribute name="recordID" optional="YES" attributeType="String"/>
+        <attribute name="tableName" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="PendingMessage" representedClassName="PendingMessage" syncable="YES" codeGenerationType="class">
+        <attribute name="attempts" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="encryptedPayload" optional="YES" attributeType="Binary"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="lastAttempt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="messageType" optional="YES" attributeType="String"/>
+        <attribute name="recipientID" optional="YES" attributeType="String"/>
+        <attribute name="status" optional="YES" attributeType="String"/>
+    </entity>
+</model>
