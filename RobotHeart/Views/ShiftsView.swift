@@ -1176,7 +1176,8 @@ struct TodaysCommitmentsSection: View {
                         subtitle: formatTime(shift.startTime),
                         points: pointsForLocation(shift.location),
                         type: .shift,
-                        isUrgent: shift.startTime < Date().addingTimeInterval(3600)
+                        isUrgent: shift.startTime < Date().addingTimeInterval(3600),
+                        startTime: shift.startTime
                     )
                 }
                 
@@ -1269,55 +1270,167 @@ struct ShiftCommitmentRow: View {
     let points: Int
     let type: ShiftCommitmentType
     let isUrgent: Bool
+    var startTime: Date? = nil
+    var locationDistance: Double? = nil // Distance in meters
     
     enum ShiftCommitmentType {
         case shift, task
     }
     
+    // Estimated walk speed on playa (slower due to dust, terrain)
+    private let playaWalkSpeedMPS: Double = 1.0 // ~2.2 mph, conservative for playa
+    
+    // Calculate time to leave
+    var timeToLeave: (minutes: Int, status: LeaveStatus)? {
+        guard let start = startTime else { return nil }
+        
+        let now = Date()
+        let timeUntilStart = start.timeIntervalSince(now)
+        
+        // Estimate travel time (default 10 min if no GPS)
+        let travelTimeSeconds: Double
+        if let distance = locationDistance {
+            travelTimeSeconds = distance / playaWalkSpeedMPS
+        } else {
+            travelTimeSeconds = 600 // Default 10 min buffer
+        }
+        
+        let leaveInSeconds = timeUntilStart - travelTimeSeconds - 300 // 5 min buffer
+        let leaveInMinutes = Int(leaveInSeconds / 60)
+        
+        if leaveInMinutes < 0 {
+            return (abs(leaveInMinutes), .late)
+        } else if leaveInMinutes < 5 {
+            return (leaveInMinutes, .leaveNow)
+        } else if leaveInMinutes < 15 {
+            return (leaveInMinutes, .soon)
+        } else {
+            return (leaveInMinutes, .plenty)
+        }
+    }
+    
+    enum LeaveStatus {
+        case plenty, soon, leaveNow, late
+        
+        var color: Color {
+            switch self {
+            case .plenty: return Theme.Colors.connected
+            case .soon: return Theme.Colors.goldenYellow
+            case .leaveNow: return Theme.Colors.sunsetOrange
+            case .late: return Theme.Colors.emergency
+            }
+        }
+        
+        var icon: String {
+            switch self {
+            case .plenty: return "checkmark.circle"
+            case .soon: return "clock"
+            case .leaveNow: return "figure.walk"
+            case .late: return "exclamationmark.triangle"
+            }
+        }
+    }
+    
     var body: some View {
-        HStack(spacing: Theme.Spacing.md) {
-            // Icon
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundColor(type == .shift ? Theme.Colors.turquoise : Theme.Colors.sunsetOrange)
-                .frame(width: 40, height: 40)
-                .background((type == .shift ? Theme.Colors.turquoise : Theme.Colors.sunsetOrange).opacity(0.15))
-                .cornerRadius(Theme.CornerRadius.sm)
-            
-            // Details
-            VStack(alignment: .leading, spacing: 2) {
-                HStack {
-                    Text(title)
-                        .font(Theme.Typography.callout)
-                        .fontWeight(.medium)
-                        .foregroundColor(Theme.Colors.robotCream)
-                    
-                    if isUrgent {
-                        Text("SOON")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(Theme.Colors.backgroundDark)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Theme.Colors.goldenYellow)
-                            .cornerRadius(4)
+        VStack(spacing: 0) {
+            HStack(spacing: Theme.Spacing.md) {
+                // Icon
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundColor(type == .shift ? Theme.Colors.turquoise : Theme.Colors.sunsetOrange)
+                    .frame(width: 40, height: 40)
+                    .background((type == .shift ? Theme.Colors.turquoise : Theme.Colors.sunsetOrange).opacity(0.15))
+                    .cornerRadius(Theme.CornerRadius.sm)
+                
+                // Details
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(title)
+                            .font(Theme.Typography.callout)
+                            .fontWeight(.medium)
+                            .foregroundColor(Theme.Colors.robotCream)
+                        
+                        if isUrgent {
+                            Text("SOON")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(Theme.Colors.backgroundDark)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Theme.Colors.goldenYellow)
+                                .cornerRadius(4)
+                        }
                     }
+                    
+                    Text(subtitle)
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
                 }
                 
-                Text(subtitle)
-                    .font(Theme.Typography.caption)
-                    .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                Spacer()
+                
+                // Points
+                Text("+\(points)")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundColor(Theme.Colors.sunsetOrange)
             }
+            .padding(Theme.Spacing.md)
             
-            Spacer()
-            
-            // Points
-            Text("+\(points)")
-                .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundColor(Theme.Colors.sunsetOrange)
+            // Time to leave indicator (only for shifts with start time)
+            if let (minutes, status) = timeToLeave {
+                Divider()
+                    .background(Theme.Colors.robotCream.opacity(0.1))
+                
+                HStack(spacing: Theme.Spacing.sm) {
+                    Image(systemName: status.icon)
+                        .font(.system(size: 12))
+                        .foregroundColor(status.color)
+                    
+                    switch status {
+                    case .late:
+                        Text("You should have left \(minutes) min ago!")
+                            .font(Theme.Typography.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(status.color)
+                    case .leaveNow:
+                        Text("Leave now to be on time")
+                            .font(Theme.Typography.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(status.color)
+                    case .soon:
+                        Text("Leave in \(minutes) min")
+                            .font(Theme.Typography.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(status.color)
+                    case .plenty:
+                        Text("\(minutes) min until you need to leave")
+                            .font(Theme.Typography.caption)
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                    }
+                    
+                    Spacer()
+                    
+                    // Distance if available
+                    if let distance = locationDistance {
+                        Text(formatDistance(distance))
+                            .font(Theme.Typography.caption)
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.4))
+                    }
+                }
+                .padding(.horizontal, Theme.Spacing.md)
+                .padding(.vertical, Theme.Spacing.sm)
+                .background(status == .late || status == .leaveNow ? status.color.opacity(0.1) : Color.clear)
+            }
         }
-        .padding(Theme.Spacing.md)
         .background(Theme.Colors.backgroundLight)
         .cornerRadius(Theme.CornerRadius.md)
+    }
+    
+    private func formatDistance(_ meters: Double) -> String {
+        if meters < 1000 {
+            return "\(Int(meters))m away"
+        } else {
+            return String(format: "%.1fkm away", meters / 1000)
+        }
     }
 }
 

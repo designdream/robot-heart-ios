@@ -58,6 +58,7 @@ struct MessagesHubView: View {
 struct GlobalChannelView: View {
     @EnvironmentObject var meshtasticManager: MeshtasticManager
     @State private var messageText = ""
+    @State private var showingTemplates = false
     @FocusState private var isInputFocused: Bool
     
     var body: some View {
@@ -113,8 +114,40 @@ struct GlobalChannelView: View {
                 }
             }
             
+            // Quick templates
+            if showingTemplates {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Theme.Spacing.sm) {
+                        ForEach(Message.Template.allCases, id: \.self) { template in
+                            Button(action: {
+                                messageText = template.content
+                                showingTemplates = false
+                            }) {
+                                Text(template.content)
+                                    .font(Theme.Typography.caption)
+                                    .foregroundColor(Theme.Colors.robotCream)
+                                    .padding(.horizontal, Theme.Spacing.sm)
+                                    .padding(.vertical, Theme.Spacing.xs)
+                                    .background(Theme.Colors.backgroundLight)
+                                    .cornerRadius(Theme.CornerRadius.sm)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                .padding(.vertical, Theme.Spacing.sm)
+                .background(Theme.Colors.backgroundMedium.opacity(0.5))
+            }
+            
             // Input bar
             HStack(spacing: Theme.Spacing.sm) {
+                // Templates button
+                Button(action: { showingTemplates.toggle() }) {
+                    Image(systemName: "text.bubble")
+                        .font(.title3)
+                        .foregroundColor(showingTemplates ? Theme.Colors.sunsetOrange : Theme.Colors.robotCream.opacity(0.5))
+                }
+                
                 TextField("Message camp...", text: $messageText)
                     .font(Theme.Typography.body)
                     .foregroundColor(Theme.Colors.robotCream)
@@ -316,19 +349,70 @@ struct DMConversationRowSimple: View {
 // MARK: - Announcements Tab View
 struct AnnouncementsTabView: View {
     @EnvironmentObject var announcementManager: AnnouncementManager
+    @EnvironmentObject var shiftManager: ShiftManager
+    @State private var showingCreateSheet = false
+    @State private var showingHistory = false
     
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: Theme.Spacing.md) {
-                if announcementManager.announcements.isEmpty {
-                    EmptyAnnouncementsPlaceholder()
-                } else {
-                    ForEach(announcementManager.announcements) { announcement in
-                        AnnouncementListCard(announcement: announcement)
+        VStack(spacing: 0) {
+            // Admin create button
+            if shiftManager.isAdmin {
+                Button(action: { showingCreateSheet = true }) {
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                        Text("New Announcement")
+                    }
+                    .font(Theme.Typography.callout)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.Colors.backgroundDark)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Theme.Colors.sunsetOrange)
+                    .cornerRadius(Theme.CornerRadius.md)
+                }
+                .padding()
+            }
+            
+            ScrollView {
+                LazyVStack(spacing: Theme.Spacing.md) {
+                    if announcementManager.announcements.isEmpty {
+                        EmptyAnnouncementsPlaceholder()
+                    } else {
+                        ForEach(announcementManager.announcements) { announcement in
+                            AnnouncementListCard(announcement: announcement)
+                        }
+                    }
+                    
+                    // History section
+                    if !announcementManager.dismissedAnnouncements.isEmpty {
+                        Button(action: { showingHistory.toggle() }) {
+                            HStack {
+                                Image(systemName: "clock.arrow.circlepath")
+                                Text("View History (\(announcementManager.dismissedAnnouncements.count))")
+                                Spacer()
+                                Image(systemName: showingHistory ? "chevron.up" : "chevron.down")
+                            }
+                            .font(Theme.Typography.callout)
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                            .padding()
+                            .background(Theme.Colors.backgroundMedium)
+                            .cornerRadius(Theme.CornerRadius.md)
+                        }
+                        
+                        if showingHistory {
+                            ForEach(announcementManager.dismissedAnnouncements) { announcement in
+                                AnnouncementListCard(announcement: announcement)
+                                    .opacity(0.6)
+                            }
+                        }
                     }
                 }
+                .padding()
             }
-            .padding()
+        }
+        .sheet(isPresented: $showingCreateSheet) {
+            CreateAnnouncementView()
+                .environmentObject(announcementManager)
         }
     }
 }

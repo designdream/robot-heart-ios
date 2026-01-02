@@ -75,24 +75,33 @@ struct Message: Identifiable, Codable {
 // MARK: - Message Templates
 extension Message {
     enum Template: String, CaseIterable {
-        case ice = "[ICE] Ice available at camp"
-        case water = "[WATER] Water refill at camp"
-        case shift = "[SHIFT] Shift change in 15 minutes"
-        case whiteout = "[WHITEOUT] Whiteout conditions - stay put"
-        case meet = "[MEET] Meet at the heart"
-        case help = "[SOS] Need assistance"
+        // Quick status updates
+        case onMyWay = "On my way! 🚶"
+        case running5Late = "Running 5 min late"
+        case running15Late = "Running 15 min late"
+        case atLocation = "I'm here! 📍"
+        case shiftStarting = "Starting my shift now"
+        case shiftEnding = "Shift complete ✅"
+        // Coordination
+        case meetAtBus = "Meet at the bus?"
+        case meetAtCamp = "Meet at camp?"
+        case whereIsEveryone = "Where is everyone?"
+        // Resources
+        case waterBreak = "Water break! 💧"
+        case iceAvailable = "Ice available at camp 🧊"
+        // Help
+        case needHelp = "Need help at my location"
+        case allGood = "All good here 👍"
         
-        var content: String {
-            rawValue
-        }
+        var content: String { rawValue }
         
         var type: MessageType {
-            if rawValue.contains("[SOS]") {
+            if rawValue.contains("Need help") {
                 return .emergency
-            } else if rawValue.contains("[SHIFT]") {
+            } else if rawValue.contains("shift") {
                 return .shiftUpdate
             } else {
-                return .announcement
+                return .text
             }
         }
     }
