@@ -10,7 +10,7 @@ struct CommunityHubView: View {
     @EnvironmentObject var socialManager: SocialManager
     @EnvironmentObject var locationManager: LocationManager
     @State private var searchText = ""
-    @State private var selectedFilter: CommunityFilter = .all
+    @State private var selectedFilter: CommunityFilter = .connections
     @State private var viewMode: ViewMode = .list
     
     enum ViewMode: String, CaseIterable {
@@ -79,7 +79,7 @@ struct CommunityHubView: View {
                 Theme.Colors.backgroundDark.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // View mode toggle (List / Map) - pill style
+                    // View mode toggle (List / Map) - pill style, no background
                     HStack(spacing: Theme.Spacing.xs) {
                         ForEach(ViewMode.allCases, id: \.self) { mode in
                             Button(action: { 
@@ -104,7 +104,6 @@ struct CommunityHubView: View {
                     }
                     .padding(.horizontal, Theme.Spacing.md)
                     .padding(.vertical, Theme.Spacing.sm)
-                    .background(Theme.Colors.backgroundMedium)
                     
                     // Search bar (always visible)
                     HStack {
@@ -179,12 +178,7 @@ struct CommunityHubView: View {
                         .foregroundColor(Theme.Colors.robotCream)
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(destination: PlacesView()) {
-                        Image(systemName: "map.fill")
-                            .foregroundColor(Theme.Colors.turquoise)
-                    }
-                }
+                // NOTE: Removed map icon - redundant with List/Map toggle
             }
         }
     }
