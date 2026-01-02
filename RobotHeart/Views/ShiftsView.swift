@@ -48,8 +48,8 @@ struct ShiftsView: View {
                             // Merged from ContributeView - this is action-oriented
                             WaysToContributeSection()
                             
-                            // SECTION 5: Camp Superstars (celebration, not ranking)
-                            CampSuperstarsSection()
+                            // NOTE: Camp Superstars removed - clutters minimalist design
+                            // Celebration of contributors can be accessed via ContributeView sheet if needed
                         }
                         .padding()
                     }
