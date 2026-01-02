@@ -294,9 +294,31 @@ struct CommunityFilterChip: View {
 struct CommunityMemberCard: View {
     let member: CampMember
     @EnvironmentObject var profileManager: ProfileManager
+    @EnvironmentObject var economyManager: EconomyManager
     
     var isConnection: Bool {
         profileManager.approvedContacts.contains(member.id)
+    }
+    
+    // Get member's burn from leaderboard (or mock based on member ID for demo)
+    var memberBurn: Int {
+        // Check leaderboard for this member
+        if let entry = economyManager.leaderboard.first(where: { $0.memberID == member.id }) {
+            return entry.points
+        }
+        // For demo: generate consistent burn based on member ID hash
+        let hash = abs(member.id.hashValue)
+        return (hash % 100) + (member.isOnline ? 10 : 0)
+    }
+    
+    var burnBadge: (icon: String, color: Color, label: String) {
+        switch memberBurn {
+        case 100...: return ("flame.fill", Theme.Colors.goldenYellow, "🔥")
+        case 50..<100: return ("flame.fill", Theme.Colors.sunsetOrange, "")
+        case 20..<50: return ("flame", Theme.Colors.sunsetOrange.opacity(0.7), "")
+        case 1..<20: return ("flame", Theme.Colors.robotCream.opacity(0.5), "")
+        default: return ("", .clear, "")
+        }
     }
     
     var body: some View {
@@ -325,7 +347,7 @@ struct CommunityMemberCard: View {
             
             // Info
             VStack(alignment: .leading, spacing: 4) {
-                HStack {
+                HStack(spacing: Theme.Spacing.xs) {
                     Text(member.name)
                         .font(Theme.Typography.callout)
                         .fontWeight(.medium)
@@ -335,6 +357,11 @@ struct CommunityMemberCard: View {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 10))
                             .foregroundColor(Theme.Colors.dustyPink)
+                    }
+                    
+                    // Burn badge - badge of honor!
+                    if memberBurn > 0 {
+                        BurnBadge(burn: memberBurn)
                     }
                 }
                 
@@ -401,6 +428,42 @@ struct CommunityMemberCard: View {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+// MARK: - Burn Badge
+/// Shows member's burn contribution as a badge of honor
+struct BurnBadge: View {
+    let burn: Int
+    
+    var badgeColor: Color {
+        switch burn {
+        case 100...: return Theme.Colors.goldenYellow
+        case 50..<100: return Theme.Colors.sunsetOrange
+        case 20..<50: return Theme.Colors.sunsetOrange.opacity(0.8)
+        default: return Theme.Colors.robotCream.opacity(0.6)
+        }
+    }
+    
+    var badgeIcon: String {
+        switch burn {
+        case 50...: return "flame.fill"
+        default: return "flame"
+        }
+    }
+    
+    var body: some View {
+        HStack(spacing: 2) {
+            Image(systemName: badgeIcon)
+                .font(.system(size: 9))
+            Text("\(burn)")
+                .font(.system(size: 10, weight: .semibold))
+        }
+        .foregroundColor(badgeColor)
+        .padding(.horizontal, 5)
+        .padding(.vertical, 2)
+        .background(badgeColor.opacity(0.15))
+        .cornerRadius(Theme.CornerRadius.full)
     }
 }
 
