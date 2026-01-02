@@ -5,7 +5,7 @@ import PhotosUI
 struct ProfileView: View {
     @EnvironmentObject var profileManager: ProfileManager
     @State private var showingEditProfile = false
-    @State private var showingPrivacySettings = false
+    @State private var showingScanner = false
     
     var body: some View {
         NavigationView {
@@ -14,8 +14,24 @@ struct ProfileView: View {
                 
                 ScrollView {
                     VStack(spacing: Theme.Spacing.lg) {
-                        // Profile header
-                        ProfileHeader(profile: profileManager.myProfile)
+                        // MY QR CODE - Big and prominent for others to scan
+                        MyQRCodeCard(profile: profileManager.myProfile)
+                        
+                        // Scan button - to scan others
+                        Button(action: { showingScanner = true }) {
+                            HStack {
+                                Image(systemName: "qrcode.viewfinder")
+                                    .font(.title2)
+                                Text("Scan Someone's Code")
+                                    .font(Theme.Typography.callout)
+                                    .fontWeight(.semibold)
+                            }
+                            .foregroundColor(Theme.Colors.backgroundDark)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Theme.Colors.turquoise)
+                            .cornerRadius(Theme.CornerRadius.md)
+                        }
                         
                         // Quick stats
                         ProfileStats()
@@ -23,11 +39,6 @@ struct ProfileView: View {
                         // Contact requests
                         if profileManager.pendingRequestsCount > 0 {
                             ContactRequestsSection()
-                        }
-                        
-                        // QR Connect - Exchange contact info
-                        NavigationLink(destination: QRContactExchangeView()) {
-                            SettingsRow(icon: "qrcode", title: "Connect via QR", color: Theme.Colors.dustyPink)
                         }
                         
                         // Edit profile link
@@ -48,8 +59,11 @@ struct ProfileView: View {
                     .padding()
                 }
             }
-            .navigationTitle("Profile")
+            .navigationTitle("Me")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showingScanner) {
+                ContactScannerView()
+            }
         }
     }
 }
@@ -691,6 +705,354 @@ struct StructureDetailView: View {
                         .foregroundColor(Theme.Colors.sunsetOrange)
                 }
             }
+        }
+    }
+}
+
+// MARK: - My QR Code Card
+/// Large, prominent QR code for others to scan - the primary way to connect
+struct MyQRCodeCard: View {
+    let profile: UserProfile
+    @State private var qrImage: UIImage?
+    
+    var body: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            // Profile info at top
+            HStack(spacing: Theme.Spacing.md) {
+                ProfilePhotoView(imageData: profile.profilePhotoData, initials: profile.initials, size: 60)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(profile.displayName)
+                        .font(Theme.Typography.headline)
+                        .foregroundColor(Theme.Colors.robotCream)
+                    
+                    if let location = profile.locationText {
+                        HStack(spacing: 4) {
+                            Image(systemName: "mappin.circle.fill")
+                                .font(.system(size: 12))
+                            Text(location)
+                        }
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.sunsetOrange)
+                    }
+                }
+                
+                Spacer()
+            }
+            
+            // Big QR Code
+            if let qrImage = qrImage {
+                Image(uiImage: qrImage)
+                    .interpolation(.none)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 200)
+                    .padding(Theme.Spacing.md)
+                    .background(Color.white)
+                    .cornerRadius(Theme.CornerRadius.md)
+            } else {
+                RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
+                    .fill(Color.white)
+                    .frame(width: 220, height: 220)
+                    .overlay(
+                        ProgressView()
+                            .tint(Theme.Colors.backgroundDark)
+                    )
+            }
+            
+            Text("Let others scan this to connect")
+                .font(Theme.Typography.caption)
+                .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.lg)
+        .onAppear {
+            generateQRCode()
+        }
+    }
+    
+    private func generateQRCode() {
+        // Create contact data to encode
+        let contactData = ContactQRData(
+            memberID: profile.id,
+            displayName: profile.displayName,
+            realName: profile.privacySettings.showRealName ? profile.realName : nil,
+            location: profile.privacySettings.showLocation ? profile.locationText : nil,
+            hasPhoto: profile.profilePhotoData != nil
+        )
+        
+        guard let jsonData = try? JSONEncoder().encode(contactData),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            return
+        }
+        
+        // Generate QR code
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(jsonString.utf8)
+        filter.correctionLevel = "M"
+        
+        if let outputImage = filter.outputImage {
+            let transform = CGAffineTransform(scaleX: 10, y: 10)
+            let scaledImage = outputImage.transformed(by: transform)
+            
+            if let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) {
+                qrImage = UIImage(cgImage: cgImage)
+            }
+        }
+    }
+}
+
+// MARK: - Contact QR Data
+struct ContactQRData: Codable {
+    let memberID: String
+    let displayName: String
+    let realName: String?
+    let location: String?
+    let hasPhoto: Bool
+    let timestamp: Date
+    
+    init(memberID: String, displayName: String, realName: String?, location: String?, hasPhoto: Bool) {
+        self.memberID = memberID
+        self.displayName = displayName
+        self.realName = realName
+        self.location = location
+        self.hasPhoto = hasPhoto
+        self.timestamp = Date()
+    }
+}
+
+// MARK: - Contact Scanner View
+struct ContactScannerView: View {
+    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var profileManager: ProfileManager
+    @EnvironmentObject var meshtasticManager: MeshtasticManager
+    @State private var scannedContact: ContactQRData?
+    @State private var showingConfirmation = false
+    @State private var isTransferringPhoto = false
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Theme.Colors.backgroundDark.ignoresSafeArea()
+                
+                VStack(spacing: Theme.Spacing.lg) {
+                    // Camera viewfinder placeholder
+                    ZStack {
+                        RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                            .fill(Theme.Colors.backgroundLight)
+                            .frame(height: 300)
+                        
+                        VStack(spacing: Theme.Spacing.md) {
+                            Image(systemName: "qrcode.viewfinder")
+                                .font(.system(size: 64))
+                                .foregroundColor(Theme.Colors.turquoise)
+                            
+                            Text("Point camera at QR code")
+                                .font(Theme.Typography.body)
+                                .foregroundColor(Theme.Colors.robotCream)
+                            
+                            Text("Camera access required")
+                                .font(Theme.Typography.caption)
+                                .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                        }
+                        
+                        // Scanning frame overlay
+                        RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
+                            .stroke(Theme.Colors.turquoise, lineWidth: 3)
+                            .frame(width: 200, height: 200)
+                    }
+                    
+                    // Instructions
+                    VStack(spacing: Theme.Spacing.sm) {
+                        Text("Scan to Connect")
+                            .font(Theme.Typography.headline)
+                            .foregroundColor(Theme.Colors.robotCream)
+                        
+                        Text("When you scan someone's code, you'll exchange contact info and profile photos via Bluetooth")
+                            .font(Theme.Typography.caption)
+                            .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                    
+                    // Demo: Simulate scan button (for testing)
+                    Button(action: simulateScan) {
+                        HStack {
+                            Image(systemName: "person.badge.plus")
+                            Text("Simulate Scan (Demo)")
+                        }
+                        .font(Theme.Typography.callout)
+                        .foregroundColor(Theme.Colors.robotCream)
+                        .padding()
+                        .background(Theme.Colors.backgroundLight)
+                        .cornerRadius(Theme.CornerRadius.md)
+                    }
+                    
+                    Spacer()
+                }
+                .padding()
+            }
+            .navigationTitle("Scan QR Code")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(Theme.Colors.sunsetOrange)
+                }
+            }
+            .sheet(isPresented: $showingConfirmation) {
+                if let contact = scannedContact {
+                    ContactConfirmationView(
+                        contact: contact,
+                        isTransferringPhoto: $isTransferringPhoto,
+                        onConfirm: {
+                            // Add contact and initiate BLE photo transfer
+                            addContact(contact)
+                            showingConfirmation = false
+                            dismiss()
+                        },
+                        onCancel: {
+                            showingConfirmation = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+    
+    private func simulateScan() {
+        // Demo: Create a fake scanned contact
+        scannedContact = ContactQRData(
+            memberID: UUID().uuidString,
+            displayName: "Dusty Phoenix",
+            realName: "Alex Johnson",
+            location: "San Francisco, CA",
+            hasPhoto: true
+        )
+        showingConfirmation = true
+    }
+    
+    private func addContact(_ contact: ContactQRData) {
+        // Add to approved contacts directly (mutual scan = auto-approve)
+        if !profileManager.approvedContacts.contains(contact.memberID) {
+            profileManager.approvedContacts.append(contact.memberID)
+        }
+        
+        // If they have a photo, initiate BLE transfer
+        if contact.hasPhoto {
+            initiatePhotoTransfer(from: contact.memberID)
+        }
+    }
+    
+    private func initiatePhotoTransfer(from memberID: String) {
+        isTransferringPhoto = true
+        // TODO: Implement BLE photo transfer
+        // This would use BLEMeshManager to request and receive the photo
+        // For now, just simulate a delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            isTransferringPhoto = false
+        }
+    }
+}
+
+// MARK: - Contact Confirmation View
+struct ContactConfirmationView: View {
+    let contact: ContactQRData
+    @Binding var isTransferringPhoto: Bool
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Theme.Colors.backgroundDark.ignoresSafeArea()
+                
+                VStack(spacing: Theme.Spacing.xl) {
+                    // Contact preview
+                    VStack(spacing: Theme.Spacing.md) {
+                        // Avatar placeholder
+                        ZStack {
+                            Circle()
+                                .fill(Theme.Colors.turquoise.opacity(0.2))
+                                .frame(width: 100, height: 100)
+                            
+                            Text(String(contact.displayName.prefix(2)).uppercased())
+                                .font(.system(size: 36, weight: .bold))
+                                .foregroundColor(Theme.Colors.turquoise)
+                        }
+                        
+                        Text(contact.displayName)
+                            .font(Theme.Typography.title2)
+                            .foregroundColor(Theme.Colors.robotCream)
+                        
+                        if let realName = contact.realName {
+                            Text(realName)
+                                .font(Theme.Typography.body)
+                                .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
+                        }
+                        
+                        if let location = contact.location {
+                            HStack(spacing: 4) {
+                                Image(systemName: "mappin.circle.fill")
+                                Text(location)
+                            }
+                            .font(Theme.Typography.caption)
+                            .foregroundColor(Theme.Colors.sunsetOrange)
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Theme.Colors.backgroundMedium)
+                    .cornerRadius(Theme.CornerRadius.lg)
+                    
+                    // Photo transfer status
+                    if contact.hasPhoto {
+                        HStack(spacing: Theme.Spacing.sm) {
+                            if isTransferringPhoto {
+                                ProgressView()
+                                    .tint(Theme.Colors.turquoise)
+                                Text("Transferring photo via Bluetooth...")
+                            } else {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(Theme.Colors.connected)
+                                Text("Photo will transfer via Bluetooth")
+                            }
+                        }
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                    }
+                    
+                    Spacer()
+                    
+                    // Action buttons
+                    VStack(spacing: Theme.Spacing.md) {
+                        Button(action: onConfirm) {
+                            HStack {
+                                Image(systemName: "person.badge.plus")
+                                Text("Add Contact")
+                            }
+                            .font(Theme.Typography.headline)
+                            .foregroundColor(Theme.Colors.backgroundDark)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Theme.Colors.turquoise)
+                            .cornerRadius(Theme.CornerRadius.md)
+                        }
+                        
+                        Button(action: onCancel) {
+                            Text("Cancel")
+                                .font(Theme.Typography.callout)
+                                .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("New Contact")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
