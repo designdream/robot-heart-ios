@@ -88,6 +88,14 @@ struct HomeView: View {
                     NavigationLink(tag: .events, selection: $quickActionNavigation) {
                         PlayaEventsView()
                     } label: { EmptyView() }
+                    
+                    NavigationLink(tag: .checkIn, selection: $quickActionNavigation) {
+                        CheckInSettingsView()
+                    } label: { EmptyView() }
+                    
+                    NavigationLink(tag: .findPerson, selection: $quickActionNavigation) {
+                        CommunityHubView()
+                    } label: { EmptyView() }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)

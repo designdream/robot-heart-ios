@@ -367,6 +367,16 @@ struct SettingsView: View {
                                 .foregroundColor(Theme.Colors.robotCream.opacity(0.7))
                         }
                         
+                        // Meshtastic Diagnostics
+                        NavigationLink(destination: DiagnosticsView()) {
+                            HStack {
+                                Image(systemName: "antenna.radiowaves.left.and.right")
+                                    .foregroundColor(Theme.Colors.turquoise)
+                                Text("Mesh Diagnostics")
+                                    .foregroundColor(Theme.Colors.robotCream)
+                            }
+                        }
+                        
                         // Reset burn data
                         Button(action: { showingResetConfirmation = true }) {
                             HStack {

@@ -162,8 +162,10 @@ struct ProfilePhotoView: View {
 
 // MARK: - Your Burn Story Card
 /// Identity in the community - moved from Home (this is who you are, not what to do)
+/// Tappable to see detailed Social Capital view
 struct YourBurnStoryCard: View {
     @EnvironmentObject var economyManager: EconomyManager
+    @State private var showingDetail = false
     
     var trustLevel: (name: String, color: Color, icon: String) {
         let shifts = economyManager.myStanding.shiftsCompleted
@@ -242,10 +244,24 @@ struct YourBurnStoryCard: View {
                 .font(Theme.Typography.caption)
                 .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
                 .italic()
+            
+            // Tap hint
+            HStack {
+                Spacer()
+                Text("Tap for details →")
+                    .font(Theme.Typography.caption)
+                    .foregroundColor(Theme.Colors.robotCream.opacity(0.4))
+            }
         }
         .padding()
         .background(Theme.Colors.backgroundMedium)
         .cornerRadius(Theme.CornerRadius.lg)
+        .onTapGesture {
+            showingDetail = true
+        }
+        .sheet(isPresented: $showingDetail) {
+            SocialCapitalDetailView()
+        }
     }
     
     var reliabilityColor: Color {
