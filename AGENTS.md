@@ -43,6 +43,16 @@ xcodebuild test -project RobotHeart.xcodeproj -scheme RobotHeart -destination 'p
 
 **Important:** Always run `xcodegen generate` after adding new files or modifying `project.yml`.
 
+## Navigation Structure
+
+```
+🏠 Home        - Dashboard, announcements, quick actions
+🔥 My Burn     - Your commitments + opportunities marketplace  
+📍 Places      - Playa Map, Camp Layout, Nearby Camps
+💬 Messages    - Global Channel + Direct Messages + Announcements
+👤 Me          - Profile, Settings, Social Capital
+```
+
 ## Project Structure
 
 ```

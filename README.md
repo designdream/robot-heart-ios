@@ -29,12 +29,19 @@ This app is designed to **support participation, not replace it**. It helps camp
 - **Privacy controls** - Border crossing mode, message retention settings
 - **Cannot be bought** - Decommodification principle
 
-### 📋 Shift System
-- **Shift Blocks** with positions and time slots
-- **Sports-Style Draft** for fair shift selection
-- **Social Capital** - earn trust through participation
-- **Accountability Leaderboard** - names visible, no anonymity for no-shows
-- **Reliability Tracking** - Superstars recognized publicly
+### 🔥 My Burn (Commitments)
+- **Your Commitments First** - Easy-to-read list of what you need to do
+- **Today's Commitments** - Shifts and tasks due today
+- **Upcoming Commitments** - Future shifts in simple list format
+- **Active Shift Card** - Current shift with time remaining
+- **Browse Opportunities** - Marketplace for available shifts/tasks
+- **Social Capital Status** - Your points and trust level
+
+### 🛒 Opportunities Marketplace
+- **Available Shifts** - Claim open shifts to earn Social Capital
+- **Available Tasks** - Pick up tasks that need doing
+- **Points Display** - See how much each opportunity is worth
+- **Motivational Design** - "Build your legacy. Earn Social Capital. Be remembered."
 
 ### ✅ Task System
 - **Ad-hoc Tasks** with priorities (P1/P2/P3)
@@ -42,10 +49,11 @@ This app is designed to **support participation, not replace it**. It helps camp
 - **Points Integration** - P1: +15, P2: +10, P3: +5
 - **Claim & Complete** workflow
 
-### 🗺️ Camp Hub
-- **Roster** - All camp members with roles and status
-- **Playa Map** - Location sharing with Ghost Mode
-- **Camp Map** - Upload and annotate camp layout image
+### 📍 Places
+- **Playa Map** - BRC street grid, member locations
+- **Our Camp** - Camp layout planner with BM specs
+- **Nearby Camps** - Discover camps via mesh network
+- **Community** - View all camp members (accessible from Places)
 
 ### 📐 Camp Layout Planner
 - **BM-Compliant Sizing** - 50' increments, max 400'×400'
@@ -85,8 +93,10 @@ This app is designed to **support participation, not replace it**. It helps camp
   - View announcement history locally
   - Auto-expire old announcements
 
-### 💬 Messages
-- **Direct Messages** - Private conversations
+### 💬 Messages (Unified)
+- **Global Channel** - Camp-wide chat for everyone
+- **Direct Messages** - Private 1:1 conversations
+- **Announcements** - Official camp broadcasts (read-only)
 - Mesh network messaging
 - Message templates
 - Store-and-forward delivery
@@ -185,6 +195,16 @@ Dependencies are managed via Swift Package Manager and will be automatically res
 
 Select your target device and press `Cmd+R` to build and run.
 
+## Navigation Structure
+
+```
+🏠 Home        - Dashboard, announcements, quick actions
+🔥 My Burn     - Your commitments + opportunities marketplace  
+📍 Places      - Playa Map, Camp Layout, Nearby Camps
+💬 Messages    - Global Channel + Direct Messages + Announcements
+👤 Me          - Profile, Settings, Social Capital
+```
+
 ## Project Structure
 
 ```
@@ -194,17 +214,17 @@ RobotHeart/
 │   ├── CampMember.swift          # Camp member data model
 │   ├── ShiftBlock.swift          # Shift blocks with positions
 │   ├── ShiftEconomy.swift        # Points system, tiers, privileges
-│   ├── AdHocTask.swift           # Task system models
+│   ├── TaskModels.swift          # Task system models
 │   ├── CampLayoutModels.swift    # Layout planner models
 │   └── ...                       # Other data models
 ├── Views/
 │   ├── ContentView.swift         # Main tab view
 │   ├── HomeView.swift            # Dashboard with announcements
-│   ├── ShiftBlockView.swift      # Shift management
-│   ├── TasksView.swift           # Task hub
-│   ├── CampHubView.swift         # Roster, maps
-│   ├── CampLayoutView.swift      # Layout planner
-│   ├── EconomyView.swift         # Points & leaderboard
+│   ├── ShiftsView.swift          # My Burn - commitments & opportunities
+│   ├── PlacesView.swift          # Places - maps, camp layout, nearby
+│   ├── MessagesHubView.swift     # Unified messaging hub
+│   ├── CampLayoutPlannerView.swift # Layout planner
+│   ├── EconomyDashboardView.swift  # Points & leaderboard
 │   ├── SocialViews.swift         # Notes, QR, knowledge base
 │   └── ...                       # Other views
 ├── Services/
@@ -219,6 +239,7 @@ RobotHeart/
 │   ├── EmergencyManager.swift    # SOS & alerts
 │   ├── AnnouncementManager.swift # Camp announcements
 │   ├── CheckInManager.swift      # Safety check-ins
+│   ├── BiometricAuthManager.swift # Face ID/Touch ID (offline)
 │   └── DraftManager.swift        # Shift draft system
 ├── Utilities/
 │   └── Theme.swift               # Design system
