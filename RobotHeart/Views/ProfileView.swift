@@ -25,9 +25,9 @@ struct ProfileView: View {
                             ContactRequestsSection()
                         }
                         
-                        // Privacy settings link
-                        NavigationLink(destination: PrivacySettingsView()) {
-                            SettingsRow(icon: "lock.shield.fill", title: "Privacy Settings", color: Theme.Colors.turquoise)
+                        // QR Connect - Exchange contact info
+                        NavigationLink(destination: QRContactExchangeView()) {
+                            SettingsRow(icon: "qrcode", title: "Connect via QR", color: Theme.Colors.dustyPink)
                         }
                         
                         // Edit profile link
@@ -35,9 +35,14 @@ struct ProfileView: View {
                             SettingsRow(icon: "pencil.circle.fill", title: "Edit Profile", color: Theme.Colors.sunsetOrange)
                         }
                         
-                        // Camp location - links to Camp Layout Planner
-                        NavigationLink(destination: CampLayoutPlannerView()) {
-                            SettingsRow(icon: "map.fill", title: "Camp Layout", color: Theme.Colors.connected)
+                        // Settings
+                        NavigationLink(destination: SettingsView()) {
+                            SettingsRow(icon: "gearshape.fill", title: "Settings", color: Theme.Colors.robotCream.opacity(0.7))
+                        }
+                        
+                        // Knowledge Base / Survival Guide
+                        NavigationLink(destination: KnowledgeBaseView()) {
+                            SettingsRow(icon: "book.fill", title: "Survival Guide", color: Theme.Colors.goldenYellow)
                         }
                     }
                     .padding()

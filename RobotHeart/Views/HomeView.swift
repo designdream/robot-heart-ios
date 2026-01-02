@@ -47,10 +47,11 @@ struct HomeView: View {
                         // PRIORITY 5: My upcoming commitments (shifts + tasks unified)
                         MyUpcomingShiftsCard()
                         
-                        // PRIORITY 6: Connection status
-                        ConnectionCard()
+                        // PRIORITY 6: Upcoming Events
+                        UpcomingEventsCard()
                         
-                        // Quick actions moved to pull-down - removed from here
+                        // PRIORITY 7: Connection status
+                        ConnectionCard()
                     }
                     .padding()
                 }
@@ -1232,6 +1233,90 @@ struct AnnouncementRow: View {
     }
 }
 
+// MARK: - Upcoming Events Card
+struct UpcomingEventsCard: View {
+    @EnvironmentObject var socialManager: SocialManager
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            HStack {
+                Image(systemName: "sparkles")
+                    .foregroundColor(Theme.Colors.dustyPink)
+                
+                Text("Upcoming Events")
+                    .font(Theme.Typography.headline)
+                    .foregroundColor(Theme.Colors.robotCream)
+                
+                Spacer()
+                
+                NavigationLink(destination: PlayaEventsView()) {
+                    Text("See All")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.sunsetOrange)
+                }
+            }
+            
+            let events = Array(socialManager.upcomingEvents.prefix(3))
+            
+            if events.isEmpty {
+                HStack {
+                    Image(systemName: "calendar.badge.plus")
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+                    Text("No upcoming events")
+                        .font(Theme.Typography.body)
+                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
+                }
+                .padding()
+            } else {
+                ForEach(events) { event in
+                    NavigationLink(destination: PlayaEventsView()) {
+                        HStack {
+                            Image(systemName: event.category.icon)
+                                .foregroundColor(event.category.color)
+                                .frame(width: 24)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(event.title)
+                                    .font(Theme.Typography.callout)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(Theme.Colors.robotCream)
+                                
+                                Text(formatEventTime(event.startTime))
+                                    .font(Theme.Typography.caption)
+                                    .foregroundColor(Theme.Colors.robotCream.opacity(0.6))
+                            }
+                            
+                            Spacer()
+                            
+                            if !event.attendees.isEmpty {
+                                Text("\(event.attendees.count) going")
+                                    .font(Theme.Typography.caption)
+                                    .foregroundColor(Theme.Colors.connected)
+                            }
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
+                        }
+                        .padding(Theme.Spacing.sm)
+                        .background(Theme.Colors.backgroundLight)
+                        .cornerRadius(Theme.CornerRadius.sm)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Theme.Colors.backgroundMedium)
+        .cornerRadius(Theme.CornerRadius.md)
+    }
+    
+    func formatEventTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE, h:mm a"
+        return formatter.string(from: date)
+    }
+}
+
 #Preview {
     HomeView()
         .environmentObject(MeshtasticManager())
@@ -1243,4 +1328,5 @@ struct AnnouncementRow: View {
         .environmentObject(ProfileManager())
         .environmentObject(DraftManager())
         .environmentObject(ShiftManager())
+        .environmentObject(SocialManager())
 }
