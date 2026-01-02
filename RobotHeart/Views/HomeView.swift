@@ -45,9 +45,6 @@ struct HomeView: View {
                         
                         // PRIORITY 5: Upcoming Events (social discovery)
                         UpcomingEventsCard()
-                        
-                        // PRIORITY 6: Survival Guide - quick access to essential info
-                        SurvivalGuideCard()
                     }
                     .padding()
                 }
@@ -1556,41 +1553,6 @@ struct UpcomingEventsCard: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEE, h:mm a"
         return formatter.string(from: date)
-    }
-}
-
-// MARK: - Survival Guide Card
-struct SurvivalGuideCard: View {
-    var body: some View {
-        NavigationLink(destination: KnowledgeBaseView()) {
-            HStack(spacing: Theme.Spacing.md) {
-                Image(systemName: "book.fill")
-                    .font(.title2)
-                    .foregroundColor(Theme.Colors.goldenYellow)
-                    .frame(width: 44, height: 44)
-                    .background(Theme.Colors.goldenYellow.opacity(0.15))
-                    .cornerRadius(Theme.CornerRadius.sm)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Survival Guide")
-                        .font(Theme.Typography.callout)
-                        .fontWeight(.medium)
-                        .foregroundColor(Theme.Colors.robotCream)
-                    Text("10 Principles, playa tips, camp info")
-                        .font(Theme.Typography.caption)
-                        .foregroundColor(Theme.Colors.robotCream.opacity(0.5))
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(Theme.Colors.robotCream.opacity(0.3))
-            }
-            .padding()
-            .background(Theme.Colors.backgroundMedium)
-            .cornerRadius(Theme.CornerRadius.md)
-        }
     }
 }
 
