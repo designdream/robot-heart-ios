@@ -22,7 +22,7 @@ class NetworkOrchestrator: ObservableObject {
     // MARK: - Network Layers
     
     private let cloudSync: CloudSyncService
-    private let meshtastic: MeshtasticManager
+    private let meshtastic: MeshtasticOrchestrator
     private let bleMesh: BLEMeshManager
     
     // MARK: - State
@@ -69,9 +69,9 @@ class NetworkOrchestrator: ObservableObject {
     
     // MARK: - Initialization
     
-    init(cloudSync: CloudSyncService, meshtastic: MeshtasticManager, bleMesh: BLEMeshManager) {
+    init(cloudSync: CloudSyncService, meshtasticOrchestrator: MeshtasticOrchestrator, bleMesh: BLEMeshManager) {
         self.cloudSync = cloudSync
-        self.meshtastic = meshtastic
+        self.meshtastic = meshtasticOrchestrator
         self.bleMesh = bleMesh
         
         // Observe network state changes

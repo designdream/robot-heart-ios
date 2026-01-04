@@ -19,7 +19,7 @@
 
 | Task | Status | Notes | Added |
 |------|--------|-------|-------|
-| Complete Meshtastic service decomposition | `pending` | Break down MeshtasticManager into focused services | 2026-01-02 |
+| Complete Meshtastic service decomposition | `in-progress` | Services created, views migration pending (see MESHTASTIC_MIGRATION_NOTES.md) | 2026-01-02 |
 | Add SwiftProtobuf for full protobuf parsing | `pending` | Current implementation is simplified | 2026-01-01 |
 | Add QR scanner to Quick Actions | `done` | Already implemented in PullDownActionsView | 2026-01-04 |
 | Integrate QR with real Meshtastic node IDs | `done` | QRCodeManager now uses real node data | 2026-01-04 |
@@ -84,6 +84,19 @@
 ---
 
 ## 📋 Session Notes
+
+### 2026-01-04 Session (Service Decomposition)
+- **Meshtastic Service Decomposition (Phases 1-5 Complete)**
+- Created `MeshtasticProtocolService` - Protocol buffer encoding/decoding
+- Created `MeshtasticConnectionService` - BLE connection management
+- Created `MeshtasticNodeService` - Node discovery and tracking (with demo members)
+- Created `MeshtasticMessageService` - Message sending/receiving/history
+- Created `MeshtasticLocationService` - Location sharing and tracking
+- Created `MeshtasticOrchestrator` - Coordinates all services
+- Updated `AppEnvironment` to use `MeshtasticOrchestrator`
+- Updated `NetworkOrchestrator` to use `MeshtasticOrchestrator`
+- Created `docs/MESHTASTIC_MIGRATION_NOTES.md` with migration guide
+- Phase 6 (view migration) pending - 14 views need updating
 
 ### 2026-01-04 Session (Cleanup & Placeholders)
 - **Cleaned up Theme.swift**: Removed non-official colors (deepRedOrange, amber, dustyPink, ledMagenta)

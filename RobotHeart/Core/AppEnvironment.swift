@@ -19,8 +19,8 @@ class AppEnvironment: ObservableObject {
     
     // MARK: - Network & Communication
     
-    /// Primary long-range mesh network (LoRa)
-    @Published var meshtastic: MeshtasticManager
+    /// Primary long-range mesh network (LoRa) - Orchestrator for all Meshtastic services
+    @Published var meshtastic: MeshtasticOrchestrator
     
     /// Short-range presence detection and high-bandwidth transfers
     @Published var bleMesh: BLEMeshManager
@@ -103,20 +103,21 @@ class AppEnvironment: ObservableObject {
         self.persistenceController = persistenceController
         
         // Initialize core services first (use local vars to avoid self access issues)
-        let meshtasticManager = MeshtasticManager()
+        let locationManager = LocationManager()
+        let meshtasticOrchestrator = MeshtasticOrchestrator(locationManager: locationManager)
         let bleMeshManager = BLEMeshManager.shared
         let cloudSyncService = CloudSyncService()
         
-        self.meshtastic = meshtasticManager
+        self.location = locationManager
+        self.meshtastic = meshtasticOrchestrator
         self.bleMesh = bleMeshManager
-        self.location = LocationManager()
         self.localData = LocalDataManager.shared
         self.cloudSync = cloudSyncService
         
         // Initialize network orchestrator (depends on cloudSync, meshtastic, and bleMesh)
         let networkOrchestratorInstance = NetworkOrchestrator(
             cloudSync: cloudSyncService,
-            meshtastic: meshtasticManager,
+            meshtasticOrchestrator: meshtasticOrchestrator,
             bleMesh: bleMeshManager
         )
         self.networkOrchestrator = networkOrchestratorInstance
@@ -160,7 +161,7 @@ class AppEnvironment: ObservableObject {
         // Update NetworkOrchestrator with new CloudSyncService
         self.networkOrchestrator = NetworkOrchestrator(
             cloudSync: cloudSync,
-            meshtastic: meshtastic,
+            meshtasticOrchestrator: meshtastic,
             bleMesh: bleMesh
         )
         
