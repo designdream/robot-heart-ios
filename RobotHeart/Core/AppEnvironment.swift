@@ -114,11 +114,12 @@ class AppEnvironment: ObservableObject {
         self.cloudSync = cloudSyncService
         
         // Initialize network orchestrator (depends on cloudSync, meshtastic, and bleMesh)
-        self.networkOrchestrator = NetworkOrchestrator(
+        let networkOrchestratorInstance = NetworkOrchestrator(
             cloudSync: cloudSyncService,
             meshtastic: meshtasticManager,
             bleMesh: bleMeshManager
         )
+        self.networkOrchestrator = networkOrchestratorInstance
         
         // Initialize messaging services
         self.messageQueue = MessageQueueManager.shared
@@ -146,7 +147,7 @@ class AppEnvironment: ObservableObject {
         self.biometricAuth = BiometricAuthManager.shared
         
         // Initialize QR code manager (depends on networkOrchestrator)
-        self.qrCodeManager = QRCodeManager(networkOrchestrator: networkOrchestrator)
+        self.qrCodeManager = QRCodeManager(networkOrchestrator: networkOrchestratorInstance)
     }
     
     // MARK: - Configuration Updates

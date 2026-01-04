@@ -84,7 +84,7 @@ struct QRCodeGeneratorView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Theme.Colors.turquoiseSky)
+                            .background(Theme.Colors.turquoise)
                             .foregroundColor(.white)
                             .cornerRadius(12)
                         }
@@ -118,13 +118,13 @@ struct QRCodeGeneratorView: View {
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Theme.Colors.deepNight.opacity(0.5))
+                            .fill(Theme.Colors.backgroundDark.opacity(0.5))
                     )
                     .padding(.horizontal)
                 }
                 .padding(.vertical)
             }
-            .background(Theme.Colors.deepNight)
+            .background(Theme.Colors.backgroundDark)
             .navigationTitle("Share QR Code")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -49,13 +49,13 @@ struct QRCodeScannerView: View {
                 
                 // Scanning frame
                 RoundedRectangle(cornerRadius: 20)
-                    .stroke(Theme.Colors.turquoiseSky, lineWidth: 3)
+                    .stroke(Theme.Colors.turquoise, lineWidth: 3)
                     .frame(width: 250, height: 250)
                     .overlay(
                         VStack {
                             Image(systemName: "qrcode.viewfinder")
                                 .font(.system(size: 60))
-                                .foregroundColor(Theme.Colors.turquoiseSky)
+                                .foregroundColor(Theme.Colors.turquoise)
                             
                             Text("Position QR code in frame")
                                 .font(.caption)
