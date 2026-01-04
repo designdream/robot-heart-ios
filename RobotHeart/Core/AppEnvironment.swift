@@ -22,6 +22,10 @@ class AppEnvironment: ObservableObject {
     /// Primary long-range mesh network (LoRa) - Orchestrator for all Meshtastic services
     @Published var meshtastic: MeshtasticOrchestrator
     
+    /// Legacy compatibility shim for views still using MeshtasticManager
+    /// DEPRECATED: Use `meshtastic` (MeshtasticOrchestrator) instead
+    @Published var meshtasticLegacy: MeshtasticManager
+    
     /// Short-range presence detection and high-bandwidth transfers
     @Published var bleMesh: BLEMeshManager
     
@@ -105,11 +109,13 @@ class AppEnvironment: ObservableObject {
         // Initialize core services first (use local vars to avoid self access issues)
         let locationManager = LocationManager()
         let meshtasticOrchestrator = MeshtasticOrchestrator(locationManager: locationManager)
+        let meshtasticManager = MeshtasticManager(orchestrator: meshtasticOrchestrator)
         let bleMeshManager = BLEMeshManager.shared
         let cloudSyncService = CloudSyncService()
         
         self.location = locationManager
         self.meshtastic = meshtasticOrchestrator
+        self.meshtasticLegacy = meshtasticManager
         self.bleMesh = bleMeshManager
         self.localData = LocalDataManager.shared
         self.cloudSync = cloudSyncService

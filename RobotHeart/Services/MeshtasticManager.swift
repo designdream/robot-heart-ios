@@ -1,11 +1,17 @@
 import Foundation
 import CoreBluetooth
 import Combine
+import CoreLocation
 
-/// Manages connection and communication with Meshtastic devices
-/// Implements the Meshtastic BLE protocol for T1000-E and other devices
-class MeshtasticManager: NSObject, ObservableObject {
-    // MARK: - Published Properties
+/// Compatibility shim that wraps MeshtasticOrchestrator
+/// This allows existing views to continue working without changes while using the new service architecture
+///
+/// **DEPRECATED**: New code should use `MeshtasticOrchestrator` directly via `AppEnvironment.meshtastic`
+@MainActor
+class MeshtasticManager: ObservableObject {
+    
+    // MARK: - Published Properties (Forwarded from Orchestrator)
+    
     @Published var isConnected = false
     @Published var connectedDevice: String?
     @Published var connectedDeviceModel: MeshtasticHardwareModel = .unset
@@ -19,7 +25,150 @@ class MeshtasticManager: NSObject, ObservableObject {
     @Published var lastError: String?
     @Published var isConfigured = false
     
-    // MARK: - Connection Status
+    // MARK: - Private Properties
+    
+    private let orchestrator: MeshtasticOrchestrator
+    private var cancellables = Set<AnyCancellable>()
+    
+    // MARK: - Initialization
+    
+    init(orchestrator: MeshtasticOrchestrator) {
+        self.orchestrator = orchestrator
+        setupForwarding()
+    }
+    
+    convenience init() {
+        // For backward compatibility - creates its own orchestrator
+        let locationManager = LocationManager()
+        let orchestrator = MeshtasticOrchestrator(locationManager: locationManager)
+        self.init(orchestrator: orchestrator)
+    }
+    
+    // MARK: - Setup
+    
+    private func setupForwarding() {
+        // Forward connection state
+        orchestrator.connection.$connectionStatus
+            .sink { [weak self] status in
+                self?.isConnected = status.isActive
+                self?.connectionStatus = Self.convertConnectionStatus(status)
+                self?.isConfigured = status == .ready
+            }
+            .store(in: &cancellables)
+        
+        orchestrator.connection.$discoveredDevices
+            .sink { [weak self] devices in
+                self?.discoveredDevices = devices.map { Self.convertDiscoveredDevice($0) }
+            }
+            .store(in: &cancellables)
+        
+        // Forward node state
+        orchestrator.nodes.$campMembers
+            .sink { [weak self] members in
+                self?.campMembers = members
+            }
+            .store(in: &cancellables)
+        
+        orchestrator.nodes.$nodes
+            .sink { [weak self] nodes in
+                self?.nodes = nodes
+            }
+            .store(in: &cancellables)
+        
+        orchestrator.nodes.$myNodeInfo
+            .sink { [weak self] info in
+                self?.myNodeInfo = info
+                if let info = info {
+                    self?.connectedDevice = info.shortName
+                    self?.connectedDeviceModel = info.hardwareModel
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Forward message state
+        orchestrator.messages.$messages
+            .sink { [weak self] messages in
+                self?.messages = messages
+            }
+            .store(in: &cancellables)
+    }
+    
+    // MARK: - Public API (Delegates to Orchestrator)
+    
+    func startScanning() {
+        orchestrator.startScanning()
+    }
+    
+    func stopScanning() {
+        orchestrator.stopScanning()
+    }
+    
+    func connect(to device: DiscoveredDevice) {
+        // Convert back to orchestrator's type
+        let orchDevice = MeshtasticConnectionService.DiscoveredDevice(
+            id: device.id,
+            peripheral: device.peripheral,
+            name: device.name,
+            rssi: device.rssi,
+            lastSeen: device.lastSeen
+        )
+        orchestrator.connect(to: orchDevice)
+    }
+    
+    func disconnect() {
+        orchestrator.disconnect()
+    }
+    
+    func sendMessage(_ text: String, to nodeID: UInt32? = nil) {
+        try? orchestrator.sendMessage(text, to: nodeID)
+    }
+    
+    func enableLocationSharing() {
+        orchestrator.startLocationSharing()
+    }
+    
+    func disableLocationSharing() {
+        orchestrator.stopLocationSharing()
+    }
+    
+    func requestNodeInfo(for nodeID: UInt32) {
+        try? orchestrator.nodes.requestNodeInfo(for: nodeID)
+    }
+    
+    func markMessageAsRead(_ messageID: String) {
+        orchestrator.messages.markAsRead(messageID)
+    }
+    
+    func deleteMessage(_ messageID: String) {
+        orchestrator.messages.deleteMessage(messageID)
+    }
+    
+    // MARK: - Type Conversions
+    
+    private static func convertConnectionStatus(_ status: MeshtasticConnectionService.ConnectionStatus) -> ConnectionStatus {
+        switch status {
+        case .disconnected: return .disconnected
+        case .bluetoothOff: return .bluetoothOff
+        case .scanning: return .scanning
+        case .connecting: return .connecting
+        case .connected: return .connected
+        case .configuring: return .configuring
+        case .ready: return .ready
+        }
+    }
+    
+    private static func convertDiscoveredDevice(_ device: MeshtasticConnectionService.DiscoveredDevice) -> DiscoveredDevice {
+        return DiscoveredDevice(
+            id: device.id,
+            peripheral: device.peripheral,
+            name: device.name,
+            rssi: device.rssi,
+            lastSeen: device.lastSeen
+        )
+    }
+    
+    // MARK: - Supporting Types (Kept for Compatibility)
+    
     enum ConnectionStatus: Equatable {
         case disconnected
         case bluetoothOff
@@ -49,7 +198,6 @@ class MeshtasticManager: NSObject, ObservableObject {
         }
     }
     
-    // MARK: - Discovered Device
     struct DiscoveredDevice: Identifiable {
         let id: UUID
         let peripheral: CBPeripheral
@@ -73,623 +221,40 @@ class MeshtasticManager: NSObject, ObservableObject {
             case weak = "Weak"
         }
     }
+}
+
+// MARK: - Meshtastic Protocol Constants
+
+struct MeshtasticBLE {
+    static let serviceUUID = "6BA1B218-15A8-461F-9FA8-5DCAE273EAFD"
     
-    // MARK: - BLE UUIDs
-    private let meshtasticServiceUUID = CBUUID(string: MeshtasticBLE.serviceUUID)
-    private let fromRadioUUID = CBUUID(string: MeshtasticBLE.Characteristics.fromRadio)
-    private let toRadioUUID = CBUUID(string: MeshtasticBLE.Characteristics.toRadio)
-    private let fromNumUUID = CBUUID(string: MeshtasticBLE.Characteristics.fromNum)
-    
-    // MARK: - Private Properties
-    private var centralManager: CBCentralManager?
-    private var connectedPeripheral: CBPeripheral?
-    private var fromRadioCharacteristic: CBCharacteristic?
-    private var toRadioCharacteristic: CBCharacteristic?
-    private var fromNumCharacteristic: CBCharacteristic?
-    private var cancellables = Set<AnyCancellable>()
-    private var configRequestId: UInt32 = 0
-    private var pendingPackets: [Data] = []
-    private var receiveBuffer = Data()
-    private let userDefaults = UserDefaults.standard
-    private let nodesKey = "meshtastic_nodes"
-    private let messagesKey = "meshtastic_messages"
-    
-    // MARK: - Initialization
-    override init() {
-        super.init()
-        loadPersistedData()
-        // Don't setup Bluetooth here - do it lazily to avoid blocking main thread
-        
-        // Load demo data if no real members exist (for testing without device)
-        if campMembers.isEmpty {
-            loadDemoMembers()
-        }
-    }
-    
-    /// Load demo camp members for testing without a Meshtastic device
-    private func loadDemoMembers() {
-        campMembers = [
-            CampMember(
-                id: "demo-1",
-                name: "Felipe",
-                role: .lead,
-                location: nil,
-                lastSeen: Date(),
-                batteryLevel: 85,
-                status: .connected,
-                currentShift: nil
-            ),
-            CampMember(
-                id: "demo-2",
-                name: "DJ Sparkle",
-                role: .bus,
-                location: nil,
-                lastSeen: Date().addingTimeInterval(-300),
-                batteryLevel: 72,
-                status: .connected,
-                currentShift: nil
-            ),
-            CampMember(
-                id: "demo-3",
-                name: "Luna",
-                role: .shadyBot,
-                location: nil,
-                lastSeen: Date().addingTimeInterval(-1800),
-                batteryLevel: 45,
-                status: .recent,
-                currentShift: nil
-            ),
-            CampMember(
-                id: "demo-4",
-                name: "Dusty Dave",
-                role: .build,
-                location: nil,
-                lastSeen: Date().addingTimeInterval(-7200),
-                batteryLevel: nil,
-                status: .offline,
-                currentShift: nil
-            ),
-            CampMember(
-                id: "demo-5",
-                name: "Playa Princess",
-                role: .general,
-                location: nil,
-                lastSeen: Date().addingTimeInterval(-600),
-                batteryLevel: 92,
-                status: .connected,
-                currentShift: nil
-            ),
-            CampMember(
-                id: "demo-6",
-                name: "Ranger Rick",
-                role: .perimeter,
-                location: nil,
-                lastSeen: Date().addingTimeInterval(-120),
-                batteryLevel: 68,
-                status: .connected,
-                currentShift: nil
-            )
-        ]
-        print("[Meshtastic] Loaded \(campMembers.count) demo members for testing")
-    }
-    
-    // MARK: - Bluetooth Setup
-    private func setupBluetooth() {
-        guard centralManager == nil else { return }
-        centralManager = CBCentralManager(delegate: self, queue: nil, options: [
-            CBCentralManagerOptionShowPowerAlertKey: true
-        ])
-    }
-    
-    // MARK: - Public Methods
-    
-    /// Start scanning for Meshtastic devices
-    func startScanning() {
-        // Lazy initialization of Bluetooth
-        setupBluetooth()
-        
-        guard centralManager?.state == .poweredOn else {
-            connectionStatus = .bluetoothOff
-            lastError = "Bluetooth is not available"
-            return
-        }
-        
-        connectionStatus = .scanning
-        discoveredDevices.removeAll()
-        lastError = nil
-        
-        // Scan for Meshtastic service
-        centralManager?.scanForPeripherals(
-            withServices: [meshtasticServiceUUID],
-            options: [
-                CBCentralManagerScanOptionAllowDuplicatesKey: false
-            ]
-        )
-        
-        // Also scan without filter to catch devices that don't advertise service UUID
-        centralManager?.scanForPeripherals(
-            withServices: nil,
-            options: [
-                CBCentralManagerScanOptionAllowDuplicatesKey: false
-            ]
-        )
-        
-        print("[Meshtastic] Started scanning for devices...")
-    }
-    
-    /// Stop scanning for devices
-    func stopScanning() {
-        centralManager?.stopScan()
-        if connectionStatus == .scanning {
-            connectionStatus = .disconnected
-        }
-        print("[Meshtastic] Stopped scanning")
-    }
-    
-    /// Connect to a discovered device
-    func connect(to device: DiscoveredDevice) {
-        stopScanning()
-        connectionStatus = .connecting
-        connectedDevice = device.name
-        lastError = nil
-        
-        centralManager?.connect(device.peripheral, options: [
-            CBConnectPeripheralOptionNotifyOnConnectionKey: true,
-            CBConnectPeripheralOptionNotifyOnDisconnectionKey: true
-        ])
-        
-        print("[Meshtastic] Connecting to \(device.name)...")
-    }
-    
-    /// Disconnect from current device
-    func disconnect() {
-        if let peripheral = connectedPeripheral {
-            centralManager?.cancelPeripheralConnection(peripheral)
-        }
-        resetConnection()
-    }
-    
-    /// Send a text message over the mesh
-    func sendMessage(_ content: String, type: Message.MessageType = .text) {
-        let messageId = UUID().uuidString
-        let message = Message(
-            id: messageId,
-            from: myNodeInfo?.myNodeNum.nodeIdString ?? "!local",
-            fromName: "You",
-            content: content,
-            timestamp: Date(),
-            messageType: type,
-            deliveryStatus: .queued,
-            location: nil
-        )
-        
-        messages.insert(message, at: 0)
-        saveMessages()
-        
-        // Encode and send via BLE
-        let packetData = MeshtasticPacketCodec.encodeTextMessage(content)
-        sendToRadio(packetData)
-        
-        // Update status after short delay (actual ACK would come from device)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.updateMessageStatus(messageId, status: .sent)
-        }
-    }
-    
-    /// Send location update over the mesh
-    func sendLocationUpdate(_ location: CampMember.Location) {
-        let position = MeshtasticPosition(
-            latitude: location.latitude,
-            longitude: location.longitude,
-            altitude: 0
-        )
-        
-        let packetData = MeshtasticPacketCodec.encodePosition(position)
-        sendToRadio(packetData)
-        
-        print("[Meshtastic] Sent position: \(location.latitude), \(location.longitude)")
-    }
-    
-    /// Send emergency alert
-    func sendEmergency() {
-        sendMessage("🚨 EMERGENCY - Need assistance at my location!", type: .emergency)
-    }
-    
-    /// Request full configuration from device
-    func requestConfig() {
-        guard connectionStatus == .connected || connectionStatus == .ready else { return }
-        
-        connectionStatus = .configuring
-        configRequestId = UInt32.random(in: 1...UInt32.max)
-        
-        let configRequest = MeshtasticPacketCodec.encodeWantConfig(configId: configRequestId)
-        sendToRadio(configRequest)
-        
-        print("[Meshtastic] Requested config with ID: \(configRequestId)")
-    }
-    
-    // MARK: - Private Methods
-    
-    private func sendToRadio(_ data: Data) {
-        guard let characteristic = toRadioCharacteristic,
-              let peripheral = connectedPeripheral else {
-            print("[Meshtastic] Cannot send - not connected")
-            pendingPackets.append(data)
-            return
-        }
-        
-        // Write with response for reliability
-        peripheral.writeValue(data, for: characteristic, type: .withResponse)
-        print("[Meshtastic] Sent \(data.count) bytes to radio")
-    }
-    
-    private func readFromRadio() {
-        guard let characteristic = fromRadioCharacteristic,
-              let peripheral = connectedPeripheral else { return }
-        
-        peripheral.readValue(for: characteristic)
-    }
-    
-    private func processReceivedData(_ data: Data) {
-        guard !data.isEmpty else {
-            // Empty packet means no more data
-            if connectionStatus == .configuring {
-                connectionStatus = .ready
-                isConfigured = true
-                print("[Meshtastic] Configuration complete")
-            }
-            return
-        }
-        
-        print("[Meshtastic] Received \(data.count) bytes")
-        
-        // Parse the FromRadio packet
-        if let packet = MeshtasticPacketCodec.decodeFromRadio(data) {
-            handleFromRadioPacket(packet)
-        }
-        
-        // Continue reading if there might be more
-        readFromRadio()
-    }
-    
-    private func handleFromRadioPacket(_ packet: FromRadioPacket) {
-        switch packet.payloadType {
-        case .myNodeInfo:
-            print("[Meshtastic] Received MyNodeInfo")
-            // Would parse and store myNodeInfo here
-            
-        case .nodeInfo:
-            print("[Meshtastic] Received NodeInfo")
-            // Would parse and add to nodes dictionary
-            
-        case .meshPacket:
-            print("[Meshtastic] Received MeshPacket")
-            // Would parse and handle message/position/etc
-            
-        case .configComplete:
-            print("[Meshtastic] Config complete (ID: \(packet.configCompleteId))")
-            if packet.configCompleteId == configRequestId {
-                connectionStatus = .ready
-                isConfigured = true
-                updateCampMembersFromNodes()
-            }
-            
-        case .channel:
-            print("[Meshtastic] Received Channel config")
-            
-        case .config:
-            print("[Meshtastic] Received Config")
-            
-        case .rebooted:
-            print("[Meshtastic] Device rebooted")
-            requestConfig()
-            
-        default:
-            print("[Meshtastic] Received packet type: \(packet.payloadType)")
-        }
-    }
-    
-    private func updateCampMembersFromNodes() {
-        // Convert Meshtastic nodes to CampMember format
-        var members: [CampMember] = []
-        
-        for (_, nodeInfo) in nodes {
-            let status: CampMember.ConnectionStatus = {
-                guard let lastSeen = nodeInfo.lastSeenDate else { return .offline }
-                let interval = Date().timeIntervalSince(lastSeen)
-                if interval < 900 { return .connected }
-                if interval < 3600 { return .recent }
-                return .offline
-            }()
-            
-            let location: CampMember.Location? = nodeInfo.position.latitudeI != 0 ? CampMember.Location(
-                latitude: nodeInfo.position.latitude,
-                longitude: nodeInfo.position.longitude,
-                timestamp: Date(timeIntervalSince1970: TimeInterval(nodeInfo.position.time)),
-                accuracy: nil
-            ) : nil
-            
-            let member = CampMember(
-                id: nodeInfo.nodeIdString,
-                name: nodeInfo.user.longName.isEmpty ? nodeInfo.nodeIdString : nodeInfo.user.longName,
-                role: .general,
-                location: location,
-                lastSeen: nodeInfo.lastSeenDate ?? Date.distantPast,
-                batteryLevel: nodeInfo.deviceMetrics.batteryLevel > 0 ? Int(nodeInfo.deviceMetrics.batteryLevel) : nil,
-                status: status,
-                currentShift: nil
-            )
-            members.append(member)
-        }
-        
-        campMembers = members
-    }
-    
-    private func resetConnection() {
-        connectedPeripheral = nil
-        fromRadioCharacteristic = nil
-        toRadioCharacteristic = nil
-        fromNumCharacteristic = nil
-        isConnected = false
-        connectedDevice = nil
-        connectionStatus = .disconnected
-        isConfigured = false
-        receiveBuffer.removeAll()
-    }
-    
-    private func updateMessageStatus(_ id: String, status: Message.DeliveryStatus) {
-        if let index = messages.firstIndex(where: { $0.id == id }) {
-            let oldMessage = messages[index]
-            messages[index] = Message(
-                id: oldMessage.id,
-                from: oldMessage.from,
-                fromName: oldMessage.fromName,
-                content: oldMessage.content,
-                timestamp: oldMessage.timestamp,
-                messageType: oldMessage.messageType,
-                deliveryStatus: status,
-                location: oldMessage.location
-            )
-            saveMessages()
-        }
-    }
-    
-    // MARK: - Persistence
-    
-    private func loadPersistedData() {
-        // Load saved messages
-        if let data = userDefaults.data(forKey: messagesKey),
-           let decoded = try? JSONDecoder().decode([Message].self, from: data) {
-            messages = decoded
-        }
-    }
-    
-    private func saveMessages() {
-        if let encoded = try? JSONEncoder().encode(messages) {
-            userDefaults.set(encoded, forKey: messagesKey)
-        }
-    }
-    
-    // MARK: - Helper to check if device name matches Meshtastic patterns
-    private func isMeshtasticDevice(name: String?) -> Bool {
-        guard let name = name else { return false }
-        return MeshtasticBLE.deviceNamePatterns.contains { name.localizedCaseInsensitiveContains($0) }
+    struct Characteristics {
+        static let fromRadio = "2C55E69E-4993-11ED-B878-0242AC120002"
+        static let toRadio = "F75C76D2-129E-4DAD-A1DD-7866124401E7"
+        static let fromNum = "ED9DA18C-A800-4F66-A670-AA7547E34453"
     }
 }
 
-// MARK: - Node ID String Extension
-extension UInt32 {
-    var nodeIdString: String {
-        String(format: "!%08x", self)
-    }
-}
+// MARK: - Packet Types
 
-// MARK: - CBCentralManagerDelegate
-extension MeshtasticManager: CBCentralManagerDelegate {
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        DispatchQueue.main.async { [weak self] in
-            switch central.state {
-            case .poweredOn:
-                print("[Meshtastic] Bluetooth is powered on")
-                if self?.connectionStatus == .bluetoothOff {
-                    self?.connectionStatus = .disconnected
-                }
-            case .poweredOff:
-                print("[Meshtastic] Bluetooth is powered off")
-                self?.connectionStatus = .bluetoothOff
-                self?.lastError = "Please turn on Bluetooth"
-            case .unauthorized:
-                print("[Meshtastic] Bluetooth is unauthorized")
-                self?.lastError = "Bluetooth permission required"
-            case .unsupported:
-                print("[Meshtastic] Bluetooth is unsupported")
-                self?.lastError = "Bluetooth not supported on this device"
-            case .resetting:
-                print("[Meshtastic] Bluetooth is resetting")
-            case .unknown:
-                print("[Meshtastic] Bluetooth state unknown")
-            @unknown default:
-                break
-            }
-        }
-    }
+struct MeshtasticPacket {
+    let fromNodeID: UInt32
+    let toNodeID: UInt32
+    let portNum: PortNum
+    let payload: Data
+    let wantAck: Bool
+    let hopLimit: UInt32
     
-    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        let deviceName = peripheral.name ?? advertisementData[CBAdvertisementDataLocalNameKey] as? String ?? "Unknown"
-        
-        // Check if this looks like a Meshtastic device
-        guard isMeshtasticDevice(name: deviceName) else { return }
-        
-        print("[Meshtastic] Discovered: \(deviceName) (RSSI: \(RSSI))")
-        
-        DispatchQueue.main.async { [weak self] in
-            // Check if already in list
-            if let index = self?.discoveredDevices.firstIndex(where: { $0.peripheral.identifier == peripheral.identifier }) {
-                self?.discoveredDevices[index].lastSeen = Date()
-            } else {
-                let device = DiscoveredDevice(
-                    id: peripheral.identifier,
-                    peripheral: peripheral,
-                    name: deviceName,
-                    rssi: RSSI.intValue,
-                    lastSeen: Date()
-                )
-                self?.discoveredDevices.append(device)
-            }
-        }
-    }
-    
-    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        print("[Meshtastic] Connected to: \(peripheral.name ?? "Unknown")")
-        
-        DispatchQueue.main.async { [weak self] in
-            self?.connectedPeripheral = peripheral
-            self?.isConnected = true
-            self?.connectionStatus = .connected
-            
-            // Set up peripheral delegate and discover services
-            peripheral.delegate = self
-            peripheral.discoverServices([self?.meshtasticServiceUUID].compactMap { $0 })
-        }
-    }
-    
-    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        print("[Meshtastic] Failed to connect: \(error?.localizedDescription ?? "Unknown error")")
-        
-        DispatchQueue.main.async { [weak self] in
-            self?.lastError = error?.localizedDescription ?? "Connection failed"
-            self?.resetConnection()
-        }
-    }
-    
-    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        print("[Meshtastic] Disconnected from: \(peripheral.name ?? "Unknown")")
-        
-        DispatchQueue.main.async { [weak self] in
-            if let error = error {
-                self?.lastError = "Disconnected: \(error.localizedDescription)"
-            }
-            self?.resetConnection()
-        }
-    }
-}
-
-// MARK: - CBPeripheralDelegate
-extension MeshtasticManager: CBPeripheralDelegate {
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        if let error = error {
-            print("[Meshtastic] Error discovering services: \(error.localizedDescription)")
-            lastError = error.localizedDescription
-            return
-        }
-        
-        guard let services = peripheral.services else { return }
-        
-        for service in services {
-            print("[Meshtastic] Found service: \(service.uuid)")
-            
-            if service.uuid == meshtasticServiceUUID {
-                // Discover all characteristics for Meshtastic service
-                peripheral.discoverCharacteristics([
-                    fromRadioUUID,
-                    toRadioUUID,
-                    fromNumUUID
-                ], for: service)
-            }
-        }
-    }
-    
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        if let error = error {
-            print("[Meshtastic] Error discovering characteristics: \(error.localizedDescription)")
-            lastError = error.localizedDescription
-            return
-        }
-        
-        guard let characteristics = service.characteristics else { return }
-        
-        for characteristic in characteristics {
-            print("[Meshtastic] Found characteristic: \(characteristic.uuid)")
-            
-            switch characteristic.uuid {
-            case fromRadioUUID:
-                fromRadioCharacteristic = characteristic
-                print("[Meshtastic] Found FromRadio characteristic")
-                
-            case toRadioUUID:
-                toRadioCharacteristic = characteristic
-                print("[Meshtastic] Found ToRadio characteristic")
-                
-            case fromNumUUID:
-                fromNumCharacteristic = characteristic
-                // Subscribe to notifications for new data
-                peripheral.setNotifyValue(true, for: characteristic)
-                print("[Meshtastic] Found FromNum characteristic - subscribing to notifications")
-                
-            default:
-                break
-            }
-        }
-        
-        // Once we have all characteristics, request MTU and start config
-        if fromRadioCharacteristic != nil && toRadioCharacteristic != nil {
-            // Request maximum MTU for better performance
-            peripheral.maximumWriteValueLength(for: .withResponse)
-            
-            // Send any pending packets
-            for packet in pendingPackets {
-                sendToRadio(packet)
-            }
-            pendingPackets.removeAll()
-            
-            // Request device configuration
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                self?.requestConfig()
-            }
-        }
-    }
-    
-    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let error = error {
-            print("[Meshtastic] Error reading characteristic: \(error.localizedDescription)")
-            return
-        }
-        
-        guard let data = characteristic.value else { return }
-        
-        switch characteristic.uuid {
-        case fromRadioUUID:
-            processReceivedData(data)
-            
-        case fromNumUUID:
-            // New data available notification - read from FromRadio
-            print("[Meshtastic] FromNum notification - reading FromRadio")
-            readFromRadio()
-            
-        default:
-            break
-        }
-    }
-    
-    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let error = error {
-            print("[Meshtastic] Error writing to characteristic: \(error.localizedDescription)")
-            lastError = error.localizedDescription
-        } else {
-            print("[Meshtastic] Successfully wrote to \(characteristic.uuid)")
-        }
-    }
-    
-    func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
-        if let error = error {
-            print("[Meshtastic] Error updating notification state: \(error.localizedDescription)")
-            return
-        }
-        
-        if characteristic.isNotifying {
-            print("[Meshtastic] Notifications enabled for \(characteristic.uuid)")
-        } else {
-            print("[Meshtastic] Notifications disabled for \(characteristic.uuid)")
-        }
+    enum PortNum: UInt32 {
+        case textMessage = 1
+        case textMessageCompressed = 2
+        case position = 3
+        case nodeInfo = 4
+        case routing = 5
+        case admin = 6
+        case telemetry = 7
+        case traceroute = 8
+        case neighborInfo = 9
+        case unknown = 999
     }
 }

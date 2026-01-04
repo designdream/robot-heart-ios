@@ -9,6 +9,11 @@ settings:
   MARKETING_VERSION: 1.0.0
   CURRENT_PROJECT_VERSION: 1
 
+packages:
+  SwiftProtobuf:
+    url: https://github.com/apple/swift-protobuf.git
+    from: 1.25.0
+
 targets:
   RobotHeart:
     type: application
@@ -25,7 +30,9 @@ targets:
         SWIFT_VERSION: 5.9
         ENABLE_PREVIEWS: YES
         DEVELOPMENT_ASSET_PATHS: "\"RobotHeart/Preview Content\""
-    dependencies: []
+    dependencies:
+      - package: SwiftProtobuf
+        product: SwiftProtobuf
     info:
       path: RobotHeart/Info.plist
       properties:
