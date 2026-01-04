@@ -4,7 +4,7 @@
 
 Robot Heart is an iOS app for the Robot Heart Burning Man camp. Built on the **10 Principles of Burning Man**, it provides mesh communication, shift management, accountability tracking, safety features, and community tools for camp members.
 
-**Repository:** https://github.com/Art-Technology-Holdings/robot-heart-ios
+**Repository:** https://github.com/designdream/robot-heart-ios
 **Platform:** iOS 17+
 **Language:** Swift 5.9+
 **Framework:** SwiftUI
@@ -412,7 +412,7 @@ xcodebuild -project RobotHeart.xcodeproj -scheme RobotHeart \
 
 ## Contact
 
-Repository: https://github.com/Art-Technology-Holdings/robot-heart-ios
+Repository: https://github.com/designdream/robot-heart-ios
 
 ---
 

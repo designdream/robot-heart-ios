@@ -11,7 +11,7 @@
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/Art-Technology-Holdings/robot-heart-ios.git
+git clone https://github.com/designdream/robot-heart-ios.git
 cd robot-heart-ios
 ```
 

@@ -321,7 +321,7 @@ When enabled:
 ### Open Source
 
 All code is available for audit:
-- GitHub: https://github.com/Art-Technology-Holdings/robot-heart-ios
+- GitHub: https://github.com/designdream/robot-heart-ios
 - License: [To be determined]
 - Security issues: Report via GitHub Issues
 
@@ -411,4 +411,4 @@ All code is available for audit:
 
 Security issues: security@robotheart.camp  
 General questions: hello@robotheart.camp  
-GitHub: https://github.com/Art-Technology-Holdings/robot-heart-ios
+GitHub: https://github.com/designdream/robot-heart-ios
