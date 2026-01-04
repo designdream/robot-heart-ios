@@ -1,35 +1,27 @@
 import SwiftUI
 
 struct Theme {
-    // MARK: - Colors (from STYLE_GUIDE.md)
+    // MARK: - Colors (8 Official Colors from STYLE_GUIDE.md)
     struct Colors {
-        // Primary Robot Heart colors
-        static let robotCream = Color(hex: "E8DCC8")      // Primary text, light UI elements
-        static let robotBrown = Color(hex: "3D2817")      // Robot details, subtle accents
+        // Primary Brand Colors (8 official)
+        static let robotCream = Color(hex: "E8DCC8")       // #1 - Primary text, light UI
+        static let sunsetOrange = Color(hex: "FF6B35")     // #2 - Primary CTA
+        static let turquoise = Color(hex: "4ECDC4")        // #3 - Active states, location
+        static let backgroundDark = Color(hex: "1A1410")   // #4 - Deep Night, primary background
+        static let goldenYellow = Color(hex: "FFB300")     // #5 - Secondary accent, warmth
+        static let robotBrown = Color(hex: "3D2817")       // #6 - Robot details, dark accents
+        static let backgroundMedium = Color(hex: "2A1F1A") // #7 - Warm Gray, cards/modals
+        static let playaDust = Color(hex: "C4A57B")        // #8 - Neutral, disabled states
         
-        // Sunset/Golden Hour Palette
-        static let sunsetOrange = Color(hex: "FF6B35")    // Primary CTA (Sunset Orange per style guide)
-        static let goldenYellow = Color(hex: "FFB300")    // Secondary accent, warmth
-        static let deepRedOrange = Color(hex: "BF360C")   // Dramatic accent
-        static let amber = Color(hex: "FF6F00")           // Mid-tone sunset
+        // Elevated surface (slightly lighter than backgroundMedium)
+        static let backgroundLight = Color(hex: "3A2F2A")  // Calculated lighter variant
         
-        // Secondary Palette
-        static let turquoise = Color(hex: "4ECDC4")       // Turquoise Sky - active states, location
-        static let dustyPink = Color(hex: "FF8B94")       // Soft accent, playfulness
-        static let playaDust = Color(hex: "C4A57B")       // Neutral, disabled states
-        static let ledMagenta = Color(hex: "E91E63")      // Stage lighting, alerts
-        
-        // Background colors (warm tones per style guide)
-        static let backgroundDark = Color(hex: "1A1410")  // Deep Night - primary background
-        static let backgroundMedium = Color(hex: "2A1F1A") // Warm Gray - cards, modals
-        static let backgroundLight = Color(hex: "3A2F2A") // Elevated surfaces
-        
-        // Status colors
-        static let connected = Color(hex: "4CAF50")       // Green
-        static let disconnected = Color(hex: "F44336")    // Red
-        static let warning = Color(hex: "FF9800")         // Orange
-        static let emergency = Color(hex: "F44336")       // Red
-        static let info = Color(hex: "4ECDC4")            // Turquoise Sky
+        // Status colors (utility, not brand colors)
+        static let connected = Color(hex: "4CAF50")        // Green - network connected
+        static let disconnected = Color(hex: "F44336")     // Red - network error
+        static let warning = Color(hex: "FF9800")          // Orange - caution
+        static let emergency = Color(hex: "F44336")        // Red - emergency alerts
+        static let info = turquoise                        // Turquoise Sky - informational
         
         // Text opacity helpers
         static let textSecondary = robotCream.opacity(0.7)
@@ -46,31 +38,35 @@ struct Theme {
         static let caption = Font.system(size: 14, weight: .regular, design: .rounded)  // Timestamps, metadata
         static let footnote = Font.system(size: 12, weight: .regular, design: .rounded) // Fine print
         
-        // Legacy aliases
+        // Legacy aliases for backward compatibility
         static let largeTitle = title1
         static let title = title2
     }
     
     // MARK: - Gradients (from COLOR_PALETTE.md)
     struct Gradients {
+        // Sunset gradient (Golden → Amber → Deep Red-Orange)
         static let sunset = LinearGradient(
             colors: [Color(hex: "FFB300"), Color(hex: "FF6F00"), Color(hex: "BF360C")],
             startPoint: .top,
             endPoint: .bottom
         )
         
+        // Playa gradient (Turquoise Sky → Playa Dust)
         static let playa = LinearGradient(
             colors: [Color(hex: "4ECDC4"), Color(hex: "C4A57B")],
             startPoint: .top,
             endPoint: .bottom
         )
         
+        // Dark mode gradient (Warm Gray → Deep Night)
         static let darkMode = LinearGradient(
             colors: [Color(hex: "2A1F1A"), Color(hex: "1A1410")],
             startPoint: .top,
             endPoint: .bottom
         )
         
+        // Golden hour gradient (Golden Yellow → Sunset Orange)
         static let goldenHour = LinearGradient(
             colors: [Colors.goldenYellow, Colors.sunsetOrange],
             startPoint: .topLeading,

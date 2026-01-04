@@ -11,7 +11,7 @@
 |------|--------|-------|-------|
 | Test Meshtastic with real T1000-E device | `pending` | Device arriving this week | 2026-01-01 |
 | Configure Digital Ocean S3 (bucket + keys) | `pending` | Create bucket, generate keys, configure CORS | 2026-01-04 |
-| Add camera permission to Info.plist | `pending` | Required for QR scanner to work | 2026-01-04 |
+| Add camera permission to Info.plist | `done` | Already exists in Info.plist | 2026-01-04 |
 
 ---
 
@@ -21,10 +21,10 @@
 |------|--------|-------|-------|
 | Complete Meshtastic service decomposition | `pending` | Break down MeshtasticManager into focused services | 2026-01-02 |
 | Add SwiftProtobuf for full protobuf parsing | `pending` | Current implementation is simplified | 2026-01-01 |
-| Add QR scanner to Quick Actions | `pending` | Make QR scanning easily accessible | 2026-01-04 |
-| Integrate QR with real Meshtastic node IDs | `pending` | Currently using placeholder node IDs | 2026-01-04 |
+| Add QR scanner to Quick Actions | `done` | Already implemented in PullDownActionsView | 2026-01-04 |
+| Integrate QR with real Meshtastic node IDs | `done` | QRCodeManager now uses real node data | 2026-01-04 |
 | Add QR code history view | `pending` | Show recently scanned codes | 2026-01-04 |
-| Remove extra colors not in Style Guide | `pending` | Simplify to 8 official colors | 2026-01-01 |
+| Remove extra colors not in Style Guide | `done` | Theme.swift cleaned up to 8 official colors | 2026-01-01 |
 
 ---
 
@@ -61,6 +61,10 @@
 
 | Task | Completed | Notes |
 |------|-----------|-------|
+| Integrate QR with real Meshtastic node IDs | 2026-01-04 | QRCodeManager + QRCodeGeneratorView use real data |
+| Remove extra colors not in Style Guide | 2026-01-04 | Theme.swift cleaned to 8 official colors |
+| Add QR scanner to Quick Actions | 2026-01-04 | Already implemented in PullDownActionsView |
+| Add camera permission to Info.plist | 2026-01-04 | Already exists (NSCameraUsageDescription) |
 | Implement AVFoundation QR scanner | 2026-01-04 | Complete with NetworkOrchestrator integration |
 | Create QRCodeManager service | 2026-01-04 | Business logic for QR processing |
 | Create QRCodeScannerView | 2026-01-04 | SwiftUI camera scanning interface |
@@ -81,7 +85,15 @@
 
 ## 📋 Session Notes
 
-### 2026-01-04 Session
+### 2026-01-04 Session (Cleanup & Placeholders)
+- **Cleaned up Theme.swift**: Removed non-official colors (deepRedOrange, amber, dustyPink, ledMagenta)
+- **Updated COLOR_PALETTE.md**: Aligned with STYLE_GUIDE.md official 8 colors
+- **Replaced placeholder node IDs**: QRCodeManager now uses real Meshtastic data
+- **Fixed QRCodeGeneratorView**: Uses QRCodeManager methods instead of hardcoded placeholders
+- **Verified existing features**: Camera permissions and QR Quick Actions already implemented
+- **Updated TODO.md**: Marked 4 tasks as done, moved to Recently Completed
+
+### 2026-01-04 Session (Earlier)
 - **QR Code Scanner Complete**
 - Implemented `QRCodeScanner` service with AVFoundation
 - Implemented `QRCodeManager` with NetworkOrchestrator integration

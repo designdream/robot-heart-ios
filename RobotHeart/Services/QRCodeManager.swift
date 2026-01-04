@@ -168,8 +168,8 @@ class QRCodeManager: ObservableObject {
         let userRole = UserDefaults.standard.string(forKey: "userRole")
         let campID = UserDefaults.standard.string(forKey: "campID") ?? "robot-heart"
         
-        // TODO: Get actual Meshtastic node ID
-        let nodeID: UInt32? = nil // networkOrchestrator.meshtastic.myNodeID
+        // Get actual Meshtastic node ID from NetworkOrchestrator
+        let nodeID: UInt32? = networkOrchestrator.meshtasticManager.myNodeInfo?.myNodeNum
         
         return QRContact(
             id: userID,
@@ -182,17 +182,23 @@ class QRCodeManager: ObservableObject {
     
     /// Generate a mesh node QR code for the current device
     func generateMeshNodeQRCode() -> QRMeshNode? {
-        // TODO: Get actual node info from MeshtasticManager
-        // let nodeInfo = networkOrchestrator.meshtastic.getMyNodeInfo()
+        // Get actual node info from MeshtasticManager via NetworkOrchestrator
+        guard let myNodeInfo = networkOrchestrator.meshtasticManager.myNodeInfo else {
+            print("⚠️ [QRCodeManager] Cannot generate mesh node QR: No node info available")
+            return nil
+        }
         
         let userName = UserDefaults.standard.string(forKey: "userName") ?? "Anonymous"
+        let nodeName = myNodeInfo.user?.longName ?? "RH-\(userName)"
+        let hardwareModel = networkOrchestrator.meshtasticManager.connectedDeviceModel.description
+        let firmwareVersion = myNodeInfo.firmwareVersion ?? "Unknown"
         
         return QRMeshNode(
-            nodeID: 0x12345678, // Placeholder
-            nodeName: "RH-\(userName)",
-            hardwareModel: "T1000-E",
-            firmwareVersion: "2.3.0",
-            publicKey: nil
+            nodeID: myNodeInfo.myNodeNum,
+            nodeName: nodeName,
+            hardwareModel: hardwareModel,
+            firmwareVersion: firmwareVersion,
+            publicKey: myNodeInfo.user?.publicKey
         )
     }
     

@@ -164,24 +164,15 @@ struct QRCodeGeneratorView: View {
     private func generateQRString(for type: QRType) async -> String {
         switch type {
         case .contact:
-            let contact = QRContact(
-                id: UserDefaults.standard.string(forKey: "userID") ?? UUID().uuidString,
-                name: UserDefaults.standard.string(forKey: "userName") ?? "Anonymous",
-                role: UserDefaults.standard.string(forKey: "userRole"),
-                meshtasticNodeID: nil, // TODO: Get from MeshtasticManager
-                campID: "robot-heart"
-            )
+            // Use QRCodeManager to generate contact with real Meshtastic node ID
+            let contact = appEnvironment.qrCodeManager.generateContactQRCode()
             return contact.toQRString() ?? "error"
             
         case .meshNode:
-            // TODO: Get actual node info from MeshtasticManager
-            let node = QRMeshNode(
-                nodeID: 0x12345678,
-                nodeName: "RH-\(UserDefaults.standard.string(forKey: "userName") ?? "Node")",
-                hardwareModel: "T1000-E",
-                firmwareVersion: "2.3.0",
-                publicKey: nil
-            )
+            // Use QRCodeManager to generate mesh node with real Meshtastic data
+            guard let node = appEnvironment.qrCodeManager.generateMeshNodeQRCode() else {
+                return "error:no_node_info"
+            }
             return node.toQRString() ?? "error"
             
         case .campInvite:
