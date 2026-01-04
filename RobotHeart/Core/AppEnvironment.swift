@@ -102,20 +102,22 @@ class AppEnvironment: ObservableObject {
     init(persistenceController: PersistenceController = .shared) {
         self.persistenceController = persistenceController
         
-        // Initialize core services first
-        self.meshtastic = MeshtasticManager()
-        self.bleMesh = BLEMeshManager.shared
+        // Initialize core services first (use local vars to avoid self access issues)
+        let meshtasticManager = MeshtasticManager()
+        let bleMeshManager = BLEMeshManager.shared
+        let cloudSyncService = CloudSyncService()
+        
+        self.meshtastic = meshtasticManager
+        self.bleMesh = bleMeshManager
         self.location = LocationManager()
         self.localData = LocalDataManager.shared
-        
-        // Initialize cloud sync service
-        self.cloudSync = CloudSyncService()
+        self.cloudSync = cloudSyncService
         
         // Initialize network orchestrator (depends on cloudSync, meshtastic, and bleMesh)
         self.networkOrchestrator = NetworkOrchestrator(
-            cloudSync: cloudSync,
-            meshtastic: meshtastic,
-            bleMesh: bleMesh
+            cloudSync: cloudSyncService,
+            meshtastic: meshtasticManager,
+            bleMesh: bleMeshManager
         )
         
         // Initialize messaging services
@@ -183,10 +185,7 @@ class AppEnvironment: ObservableObject {
         // Start camp network discovery
         campNetwork.startDiscovery()
         
-        // Setup gateway node relay if online
-        if cloudSync.isGatewayNode {
-            cloudSync.relayFromCloud()
-        }
+        // Gateway node relay is handled automatically by CloudSyncService polling
         
         // Cleanup old data
         localData.cleanupExpiredMessages()
@@ -216,7 +215,7 @@ class AppEnvironment: ObservableObject {
 // MARK: - Environment Key
 
 private struct AppEnvironmentKey: EnvironmentKey {
-    static let defaultValue = AppEnvironment()
+    @MainActor static let defaultValue = AppEnvironment()
 }
 
 extension EnvironmentValues {

@@ -301,7 +301,8 @@ class NetworkOrchestrator: ObservableObject {
                 print("📍 [NetworkOrchestrator] Sent location via Cloud")
                 
             case .meshtastic:
-                meshtastic.sendLocation(latitude: latitude, longitude: longitude)
+                let location = CampMember.Location(latitude: latitude, longitude: longitude, timestamp: Date(), accuracy: nil)
+                meshtastic.sendLocationUpdate(location)
                 print("📍 [NetworkOrchestrator] Sent location via Meshtastic")
                 
             case .offline:
