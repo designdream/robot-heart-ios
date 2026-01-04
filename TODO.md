@@ -10,9 +10,8 @@
 | Task | Status | Notes | Added |
 |------|--------|-------|-------|
 | Test Meshtastic with real T1000-E device | `pending` | Device arriving this week | 2026-01-01 |
-| Refactor architecture (Phase 1) | `done` | AppEnvironment + NetworkOrchestrator | 2026-01-02 |
-| Implement 4-layer network architecture | `done` | Cloud + LoRa + BLE + Local | 2026-01-02 |
-| Add Digital Ocean S3 cloud sync | `done` | CloudSyncService with gateway nodes | 2026-01-02 |
+| Configure Digital Ocean S3 (bucket + keys) | `pending` | Create bucket, generate keys, configure CORS | 2026-01-04 |
+| Add camera permission to Info.plist | `pending` | Required for QR scanner to work | 2026-01-04 |
 
 ---
 
@@ -20,10 +19,12 @@
 
 | Task | Status | Notes | Added |
 |------|--------|-------|-------|
-| Fix Sunset Orange color to match Style Guide | `done` | Changed to #FF6B35 in Theme.swift | 2026-01-01 |
-| Remove extra colors not in Style Guide | `pending` | Simplify to 8 official colors | 2026-01-01 |
-| Implement AVFoundation QR scanner | `done` | Complete with NetworkOrchestrator integration | 2026-01-01 |
+| Complete Meshtastic service decomposition | `pending` | Break down MeshtasticManager into focused services | 2026-01-02 |
 | Add SwiftProtobuf for full protobuf parsing | `pending` | Current implementation is simplified | 2026-01-01 |
+| Add QR scanner to Quick Actions | `pending` | Make QR scanning easily accessible | 2026-01-04 |
+| Integrate QR with real Meshtastic node IDs | `pending` | Currently using placeholder node IDs | 2026-01-04 |
+| Add QR code history view | `pending` | Show recently scanned codes | 2026-01-04 |
+| Remove extra colors not in Style Guide | `pending` | Simplify to 8 official colors | 2026-01-01 |
 
 ---
 
@@ -31,12 +32,13 @@
 
 | Task | Status | Notes | Added |
 |------|--------|-------|-------|
-| Camp-to-camp location sharing via Meshtastic | `pending` | Send camp layout/location to friends | 2026-01-01 |
 | Simplify navigation (reduce to 4 tabs) | `pending` | UX audit recommendation | 2026-01-01 |
-| Reduce Quick Actions from 9 to 6 tiles | `done` | Reduced from 9 to 8 | 2026-01-01 |
 | Add "Next Action" card to Home | `pending` | Personalized prompt for users | 2026-01-01 |
-| Combine Playa Map + Camp Map | `done` | Consolidated into Camp Layout | 2026-01-01 |
 | Implement calendar view for events | `pending` | Currently placeholder | 2026-01-01 |
+| Camp-to-camp location sharing via Meshtastic | `pending` | Send camp layout/location to friends | 2026-01-01 |
+| Add QR code favorites | `pending` | Frequently used contacts/nodes | 2026-01-04 |
+| Add batch QR scanning | `pending` | Scan multiple codes in sequence | 2026-01-04 |
+| Add custom QR code styling | `pending` | Robot Heart branding on QR codes | 2026-01-04 |
 | CloudKit sync for cross-device | `pending` | Future enhancement | 2026-01-01 |
 
 ---
@@ -47,6 +49,9 @@
 |------|--------|-------|-------|
 | Add unit tests for managers | `pending` | Improve code quality | 2026-01-01 |
 | Add UI tests for critical flows | `pending` | Improve reliability | 2026-01-01 |
+| Add NFC support | `pending` | Alternative to QR codes | 2026-01-04 |
+| Add encrypted QR codes | `pending` | For sensitive data | 2026-01-04 |
+| Add QR code analytics | `pending` | Track scans | 2026-01-04 |
 | Localization support | `pending` | Future internationalization | 2026-01-01 |
 | Dark/Light mode toggle | `pending` | Currently dark only | 2026-01-01 |
 
@@ -56,22 +61,46 @@
 
 | Task | Completed | Notes |
 |------|-----------|-------|
-| Add search to Camp Layout with highlight/gray-out | 2026-01-01 | Search by name/person, matches glow |
-| Consolidate Camp Map + Layout into one feature | 2026-01-01 | Single "Camp Layout" in Camp tab |
-| Remove upload map functionality | 2026-01-01 | Clean playa sand background instead |
-| Create TODO.md task tracking framework | 2026-01-01 | Priority-based, session notes |
+| Implement AVFoundation QR scanner | 2026-01-04 | Complete with NetworkOrchestrator integration |
+| Create QRCodeManager service | 2026-01-04 | Business logic for QR processing |
+| Create QRCodeScannerView | 2026-01-04 | SwiftUI camera scanning interface |
+| Create QRCodeGeneratorView | 2026-01-04 | QR code generation and sharing |
+| Add QRCodeManager to AppEnvironment | 2026-01-04 | Centralized dependency injection |
+| Create PROJECT_PLAN.md | 2026-01-04 | High-level project roadmap |
+| Add Secure S3 Integration | 2026-01-02 | KeychainService + AWSV4Signer |
+| Implement 4-layer network architecture | 2026-01-02 | Cloud + LoRa + BLE + Local |
+| Create NetworkOrchestrator | 2026-01-02 | Intelligent routing across layers |
+| Create AppEnvironment | 2026-01-02 | Centralized dependency injection |
+| Fix Sunset Orange color | 2026-01-02 | Changed to #FF6B35 per style guide |
+| Add search to Camp Layout | 2026-01-01 | Search by name/person, highlights matches |
+| Consolidate Camp Map + Layout | 2026-01-01 | Single "Camp Layout" in Camp tab |
 | Implement full Meshtastic BLE protocol | 2026-01-01 | MeshtasticProtocol.swift + MeshtasticManager.swift |
 | Create T1000-E setup documentation | 2026-01-01 | docs/T1000-E_SETUP_GUIDE.md |
-| Make safety check-in opt-in (off by default) | 2026-01-01 | Respects burner autonomy |
-| Add 10 Principles to Knowledge Base | 2026-01-01 | Pinned article |
-| Update leaderboard with names (accountability) | 2026-01-01 | No anonymity for performance |
-| Add BM-compliant camp layout presets | 2026-01-01 | 50' increments, fire lanes |
 
 ---
 
 ## 📋 Session Notes
 
-### 2026-01-02 Session (Phase 2)
+### 2026-01-04 Session
+- **QR Code Scanner Complete**
+- Implemented `QRCodeScanner` service with AVFoundation
+- Implemented `QRCodeManager` with NetworkOrchestrator integration
+- Created `QRCodeScannerView` and `QRCodeGeneratorView`
+- Added QR data models: `QRContact`, `QRMeshNode`, `QRCampInvite`
+- Integrated with AppEnvironment
+- Added QR follow-up tasks to TODO
+- Created `PROJECT_PLAN.md` with comprehensive roadmap
+
+### 2026-01-02 Session (Phase 2 - S3 Security)
+- **Secure S3 Integration Complete**
+- Implemented `KeychainService` for secure credential storage
+- Implemented `AWSV4Signer` for AWS Signature V4 authentication
+- Created `S3SettingsView` for user credential configuration
+- Updated `CloudSyncService` to use Keychain and AWS V4
+- Created comprehensive `S3_INTEGRATION_GUIDE.md`
+- Added `updateS3Credentials()` to AppEnvironment
+
+### 2026-01-02 Session (Phase 2 - Network Architecture)
 - **4-Layer Network Architecture Complete**
 - Designed comprehensive multi-layer strategy (Cloud → LoRa → BLE → Local)
 - Implemented `CloudSyncService` with Digital Ocean S3 integration
@@ -131,4 +160,4 @@
 
 ---
 
-*Last updated: 2026-01-01*
+*Last updated: 2026-01-04*
