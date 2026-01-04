@@ -41,11 +41,8 @@ class CloudSyncService: ObservableObject {
     
     // MARK: - Configuration
     
-    private let s3Endpoint: String
-    private let s3Bucket: String
-    private let s3AccessKey: String
-    private let s3SecretKey: String
     private let campID: String
+    private var s3Request: S3Request?
     
     // MARK: - Network Monitoring
     
@@ -65,21 +62,40 @@ class CloudSyncService: ObservableObject {
     
     // MARK: - Initialization
     
-    init(
-        s3Endpoint: String = "nyc3.digitaloceanspaces.com",
-        s3Bucket: String = "robot-heart-mesh",
-        s3AccessKey: String = "", // Load from environment or keychain
-        s3SecretKey: String = "", // Load from environment or keychain
-        campID: String = "robot-heart"
-    ) {
-        self.s3Endpoint = s3Endpoint
-        self.s3Bucket = s3Bucket
-        self.s3AccessKey = s3AccessKey
-        self.s3SecretKey = s3SecretKey
+    init(campID: String = "robot-heart") {
         self.campID = campID
+        
+        // Load S3 credentials from Keychain
+        loadS3Credentials()
         
         startNetworkMonitoring()
         loadPendingMessages()
+    }
+    
+    // MARK: - Credential Management
+    
+    private func loadS3Credentials() {
+        do {
+            let credentials = try KeychainService.shared.loadS3Credentials()
+            
+            s3Request = S3Request(
+                endpoint: credentials.endpoint,
+                bucket: credentials.bucket,
+                region: credentials.region,
+                accessKey: credentials.accessKey,
+                secretKey: credentials.secretKey
+            )
+            
+            print("☁️ [CloudSync] Loaded S3 credentials from Keychain")
+        } catch {
+            print("☁️ [CloudSync] No S3 credentials found: \(error.localizedDescription)")
+            print("☁️ [CloudSync] Cloud sync disabled until credentials are configured")
+        }
+    }
+    
+    /// Check if S3 credentials are configured
+    var hasCredentials: Bool {
+        s3Request != nil
     }
     
     // MARK: - Network Monitoring
@@ -223,6 +239,11 @@ class CloudSyncService: ObservableObject {
     }
     
     private func uploadToS3(message: QueuedMessage) async throws -> Bool {
+        guard let s3Request = s3Request else {
+            print("☁️ [CloudSync] Cannot upload: S3 credentials not configured")
+            return false
+        }
+        
         // Convert message to JSON
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -230,17 +251,13 @@ class CloudSyncService: ObservableObject {
         
         // S3 path: messages/{message_id}.json
         let s3Path = "messages/\(message.id).json"
-        let url = URL(string: "https://\(s3Bucket).\(s3Endpoint)/\(s3Path)")!
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.httpBody = jsonData
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        // Add S3 authentication headers
-        // Note: In production, use AWS Signature V4 or pre-signed URLs
-        // For now, using simplified approach (requires S3 bucket to allow public writes or use pre-signed URLs)
-        request.setValue(s3AccessKey, forHTTPHeaderField: "X-Access-Key")
+        // Build signed PUT request
+        let request = s3Request.buildPutRequest(
+            path: s3Path,
+            data: jsonData,
+            contentType: "application/json"
+        )
         
         let (_, response) = try await URLSession.shared.data(for: request)
         
@@ -272,14 +289,16 @@ class CloudSyncService: ObservableObject {
     }
     
     private func fetchCloudMessages() async {
-        guard isGatewayNode else { return }
+        guard isGatewayNode, let s3Request = s3Request else { return }
         
         do {
             // Fetch message index for our camp
             let indexPath = "messages/index/\(campID).json"
-            let url = URL(string: "https://\(s3Bucket).\(s3Endpoint)/\(indexPath)")!
             
-            let (data, _) = try await URLSession.shared.data(from: url)
+            // Build signed GET request
+            let request = s3Request.buildGetRequest(path: indexPath)
+            
+            let (data, _) = try await URLSession.shared.data(for: request)
             
             // Parse message IDs
             let messageIDs = try JSONDecoder().decode([String].self, from: data)
@@ -296,11 +315,15 @@ class CloudSyncService: ObservableObject {
     }
     
     private func fetchAndRelayMessage(messageID: String) async {
+        guard let s3Request = s3Request else { return }
+        
         do {
             let messagePath = "messages/\(messageID).json"
-            let url = URL(string: "https://\(s3Bucket).\(s3Endpoint)/\(messagePath)")!
             
-            let (data, _) = try await URLSession.shared.data(from: url)
+            // Build signed GET request
+            let request = s3Request.buildGetRequest(path: messagePath)
+            
+            let (data, _) = try await URLSession.shared.data(for: request)
             let message = try JSONDecoder().decode(QueuedMessage.self, from: data)
             
             // Mark as seen

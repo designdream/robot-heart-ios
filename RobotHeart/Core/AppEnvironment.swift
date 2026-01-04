@@ -139,6 +139,23 @@ class AppEnvironment: ObservableObject {
         self.biometricAuth = BiometricAuthManager.shared
     }
     
+    // MARK: - Configuration Updates
+    
+    /// Reload CloudSyncService with updated S3 credentials from Keychain
+    func updateS3Credentials() {
+        // Re-initialize CloudSyncService to pick up new credentials
+        self.cloudSync = CloudSyncService()
+        
+        // Update NetworkOrchestrator with new CloudSyncService
+        self.networkOrchestrator = NetworkOrchestrator(
+            cloudSync: cloudSync,
+            meshtastic: meshtastic,
+            bleMesh: bleMesh
+        )
+        
+        print("🔄 [AppEnvironment] Reloaded with updated S3 credentials")
+    }
+    
     // MARK: - Lifecycle Methods
     
     /// Start all services that need to run in the background
