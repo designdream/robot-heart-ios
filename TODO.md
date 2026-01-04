@@ -22,7 +22,7 @@
 |------|--------|-------|-------|
 | Fix Sunset Orange color to match Style Guide | `done` | Changed to #FF6B35 in Theme.swift | 2026-01-01 |
 | Remove extra colors not in Style Guide | `pending` | Simplify to 8 official colors | 2026-01-01 |
-| Implement AVFoundation QR scanner | `pending` | Currently placeholder | 2026-01-01 |
+| Implement AVFoundation QR scanner | `done` | Complete with NetworkOrchestrator integration | 2026-01-01 |
 | Add SwiftProtobuf for full protobuf parsing | `pending` | Current implementation is simplified | 2026-01-01 |
 
 ---

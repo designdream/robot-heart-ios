@@ -87,6 +87,11 @@ class AppEnvironment: ObservableObject {
     /// Biometric authentication
     @Published var biometricAuth: BiometricAuthManager
     
+    // MARK: - QR Code Services
+    
+    /// QR code scanning and generation
+    @Published var qrCodeManager: QRCodeManager
+    
     // MARK: - Data Management
     
     /// Local data storage and caching
@@ -137,6 +142,9 @@ class AppEnvironment: ObservableObject {
         
         // Initialize security
         self.biometricAuth = BiometricAuthManager.shared
+        
+        // Initialize QR code manager (depends on networkOrchestrator)
+        self.qrCodeManager = QRCodeManager(networkOrchestrator: networkOrchestrator)
     }
     
     // MARK: - Configuration Updates
